@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, TrendingDown, MoreHorizontal } from 'lucide-react';
@@ -53,6 +54,8 @@ interface CustomerOverviewProps {
 }
 
 const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onDrillDown }) => {
+  const navigate = useNavigate();
+  
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -114,7 +117,11 @@ const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onDrillDown }) => {
       </div>
       
       <div className="mt-4 flex justify-end">
-        <Button variant="link" className="text-dashboard-purple">
+        <Button 
+          variant="link" 
+          className="text-dashboard-purple"
+          onClick={() => navigate('/customers')}
+        >
           查看全部客户
         </Button>
       </div>
