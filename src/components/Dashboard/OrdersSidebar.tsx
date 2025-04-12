@@ -9,10 +9,11 @@ import {
   Package2, 
   ShoppingBag, 
   Menu, 
-  X 
+  X, 
+  FileSpreadsheet 
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavLinkProps {
   to: string;
@@ -47,7 +48,7 @@ const NavLink: React.FC<NavLinkProps> = ({ to, icon, label, isActive, onClick })
 
 const OrdersSidebar = () => {
   const location = useLocation();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   
   const navLinks = [
@@ -55,6 +56,7 @@ const OrdersSidebar = () => {
     { path: "/customers", label: "客户", icon: <Users size={18} /> },
     { path: "/products", label: "产品", icon: <Package2 size={18} /> },
     { path: "/orders", label: "订单", icon: <ShoppingBag size={18} /> },
+    { path: "/excel-upload", label: "Excel上传", icon: <FileSpreadsheet size={18} /> },
   ];
   
   const renderNavLinks = (onClick?: () => void) => (

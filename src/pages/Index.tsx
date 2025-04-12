@@ -23,27 +23,27 @@ const Index = () => {
       <OrdersSidebar />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        <Header title="仪表盘概览" />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <KPICards />
+          <KPICards onDrillDown={handleDrillDown} />
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <SalesChart />
-            <PipelineAnalysis />
+            <SalesChart onDrillDown={handleDrillDown} />
+            <PipelineAnalysis onDrillDown={handleDrillDown} />
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
               <CustomerOverview onDrillDown={handleDrillDown} />
             </div>
-            <RegionalSales />
+            <RegionalSales onDrillDown={handleDrillDown} />
           </div>
         </main>
       </div>
       
       <DrilldownModal 
-        isOpen={isDrilldownOpen} 
+        open={isDrilldownOpen} 
         onClose={() => setIsDrilldownOpen(false)}
         customerId={selectedCustomerId}
       />

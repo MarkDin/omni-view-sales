@@ -382,10 +382,10 @@ const Products = () => {
           </div>
         </div>
         
-        <ProductDrilldownModal
-          isOpen={isDrilldownOpen}
+        <ProductDrilldownModal 
+          open={isDrilldownOpen} 
           onClose={() => setIsDrilldownOpen(false)}
-          product={selectedProduct as any}
+          product={selectedProduct}
         />
       </div>
     </div>

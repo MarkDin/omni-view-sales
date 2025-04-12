@@ -8,21 +8,22 @@ import { Upload, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import * as XLSX from 'xlsx';
+import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
 
 // Define the type for order data
 interface OrderData {
   id: string;
-  customer_code: string;
-  customer_name: string;
-  customer_short_name: string;
-  country: string;
-  type: string;
-  product_type: string;
-  size: string;
-  material: string;
-  order_month: string;
-  sales_person: string;
-  order_amount: number;
+  customer_code?: string;
+  customer_name?: string;
+  customer_short_name?: string;
+  country?: string;
+  type?: string;
+  product_type?: string;
+  size?: string;
+  material?: string;
+  order_month?: string;
+  sales_person?: string;
+  order_amount?: number;
 }
 
 const Orders = () => {
@@ -188,7 +189,8 @@ const Orders = () => {
   };
   
   // Format the order amount as currency
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return '';
     return new Intl.NumberFormat('zh-CN', {
       style: 'currency',
       currency: 'CNY'
@@ -196,7 +198,7 @@ const Orders = () => {
   };
   
   // Format the date
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '';
     
     try {
@@ -211,122 +213,128 @@ const Orders = () => {
   };
   
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">订单管理</h1>
+    <div className="flex h-screen bg-gray-100">
+      <OrdersSidebar />
       
-      {/* Upload Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-medium">Excel导入</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              上传Excel文件批量导入订单数据
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              disabled={isUploading}
-              className="relative"
-              onClick={() => document.getElementById('file-upload')?.click()}
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  上传中 ({uploadProgress}%)
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  选择文件
-                </>
-              )}
-            </Button>
-            <Input
-              id="file-upload"
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={handleFileUpload}
-              disabled={isUploading}
-            />
-            
-            <Button variant="default" disabled={isUploading}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              下载模板
-            </Button>
-          </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="h-16 border-b flex items-center px-6 bg-white">
+          <h1 className="text-xl font-semibold">订单管理</h1>
         </div>
         
-        {isUploading && (
-          <div className="mt-4">
-            <div className="h-2 bg-gray-200 rounded-full mt-2">
-              <div 
-                className="h-full bg-blue-500 rounded-full transition-all duration-300" 
-                style={{ width: `${uploadProgress}%` }}
-              />
+        <main className="flex-1 overflow-y-auto p-6">
+          {/* Upload Section */}
+          <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-medium">Excel导入</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  上传Excel文件批量导入订单数据
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  disabled={isUploading}
+                  className="relative"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      上传中 ({uploadProgress}%)
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      选择文件
+                    </>
+                  )}
+                </Button>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                />
+                
+                <Button variant="default" disabled={isUploading}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  下载模板
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 mt-1 text-right">处理中，请稍候...</p>
+            
+            {isUploading && (
+              <div className="mt-4">
+                <div className="h-2 bg-gray-200 rounded-full mt-2">
+                  <div 
+                    className="h-full bg-blue-500 rounded-full transition-all duration-300" 
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1 text-right">处理中，请稍候...</p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      
-      {/* Orders Table */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-medium mb-6">订单列表</h3>
-        
-        {isLoading ? (
-          <div className="flex justify-center items-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">加载中...</span>
+          
+          {/* Orders Table */}
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-medium mb-6">订单列表</h3>
+            
+            {isLoading ? (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2">加载中...</span>
+              </div>
+            ) : error ? (
+              <div className="text-center py-10 text-red-500">
+                加载失败，请稍后重试
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-10 text-gray-500">
+                暂无订单数据，请上传Excel文件导入
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>客户编码</TableHead>
+                      <TableHead>客户名称</TableHead>
+                      <TableHead>国家</TableHead>
+                      <TableHead>类型</TableHead>
+                      <TableHead>车型</TableHead>
+                      <TableHead>材质</TableHead>
+                      <TableHead>月份</TableHead>
+                      <TableHead>业务员</TableHead>
+                      <TableHead className="text-right">下单金额</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>{order.customer_code || '-'}</TableCell>
+                        <TableCell>{order.customer_name || '-'}</TableCell>
+                        <TableCell>{order.country || '-'}</TableCell>
+                        <TableCell>{order.type || '-'}</TableCell>
+                        <TableCell>{order.product_type || '-'}</TableCell>
+                        <TableCell>{order.material || '-'}</TableCell>
+                        <TableCell>{formatDate(order.order_month)}</TableCell>
+                        <TableCell>{order.sales_person || '-'}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(order.order_amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </div>
-        ) : error ? (
-          <div className="text-center py-10 text-red-500">
-            加载失败，请稍后重试
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="text-center py-10 text-gray-500">
-            暂无订单数据，请上传Excel文件导入
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>客户编码</TableHead>
-                  <TableHead>客户名称</TableHead>
-                  <TableHead>国家</TableHead>
-                  <TableHead>类型</TableHead>
-                  <TableHead>车型</TableHead>
-                  <TableHead>尺寸</TableHead>
-                  <TableHead>材质</TableHead>
-                  <TableHead>月份</TableHead>
-                  <TableHead>业务员</TableHead>
-                  <TableHead className="text-right">下单金额</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.customer_code}</TableCell>
-                    <TableCell>{order.customer_name}</TableCell>
-                    <TableCell>{order.country}</TableCell>
-                    <TableCell>{order.type}</TableCell>
-                    <TableCell>{order.product_type}</TableCell>
-                    <TableCell>{order.size}</TableCell>
-                    <TableCell>{order.material}</TableCell>
-                    <TableCell>{formatDate(order.order_month)}</TableCell>
-                    <TableCell>{order.sales_person}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(order.order_amount)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        </main>
       </div>
     </div>
   );
