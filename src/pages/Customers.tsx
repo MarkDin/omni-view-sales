@@ -1,20 +1,7 @@
-
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Dashboard/Header';
-import Sidebar from '@/components/Dashboard/Sidebar';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Search, ArrowUp, ArrowDown, Download, 
-  Filter, TrendingUp, TrendingDown
-} from 'lucide-react';
-import DrilldownModal from '@/components/Dashboard/DrilldownModal';
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
+import React from 'react';
+import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // Define customer data type
 interface CustomerData {
@@ -154,8 +141,9 @@ const Customers = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
+    <div className="flex h-screen bg-gray-100">
+      <OrdersSidebar />
+      
       <div className="flex-1 overflow-y-auto">
         <div className="container py-6">
           <Header 

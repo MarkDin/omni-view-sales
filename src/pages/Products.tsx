@@ -1,26 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import Sidebar from '@/components/Dashboard/Sidebar';
-import Header from '@/components/Dashboard/Header';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { 
-  Table, TableBody, TableCaption, TableCell, 
-  TableHead, TableHeader, TableRow 
-} from "@/components/ui/table";
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell
+} from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
-  Card, CardContent, CardDescription, 
-  CardFooter, CardHeader, CardTitle 
-} from "@/components/ui/card";
+  Popover, 
+  PopoverTrigger, 
+  PopoverContent
+} from '@/components/ui/popover';
 import { 
-  Search, ChevronUp, ChevronDown, 
-  ArrowUpDown, TrendingUp, TrendingDown 
+  ChevronDown, 
+  Package, 
+  MoreHorizontal, 
+  Search, 
+  Filter, 
+  X
 } from 'lucide-react';
-import ProductDrilldownModal from '@/components/Dashboard/ProductDrilldownModal';
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery } from '@tanstack/react-query';
+import ProductDrilldownModal from '@/components/Dashboard/ProductDrilldownModal';
 
-// Define product data type
 interface ProductData {
   id: string;
   name: string;
@@ -35,15 +48,28 @@ interface ProductData {
   created_at: string | null;
 }
 
+interface Summary {
+  totalRevenue: number;
+  totalProducts: number;
+  totalProfit: number;
+  avgMargin: number;
+}
+
+interface CategoryCount {
+  name: string;
+  value: number;
+}
+
+const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe', '#00C49F', '#FF8042'];
+
 const Products = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState('sales');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [isFiltering, setIsFiltering] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductData | null>(null);
-  const [drilldownOpen, setDrilldownOpen] = useState(false);
-  
-  // Fetch products from Supabase
-  const { data: productsData = [], isLoading, error } = useQuery({
+  const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
+
+  const { data: products = [], isLoading, error } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,289 +77,317 @@ const Products = () => {
         .select('*');
       
       if (error) {
-        toast.error("加载产品数据失败");
+        console.error('Error fetching products:', error);
         throw error;
       }
       
       return data as ProductData[];
     }
   });
-  
-  // Sort products
-  const sortedProducts = [...productsData].sort((a, b) => {
-    if (sortDirection === 'asc') {
-      return a[sortField as keyof ProductData] > b[sortField as keyof ProductData] ? 1 : -1;
-    } else {
-      return a[sortField as keyof ProductData] < b[sortField as keyof ProductData] ? 1 : -1;
-    }
-  });
-  
-  // Filter products
-  const filteredProducts = sortedProducts.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  // Toggle sort direction
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
+
+  const calculateSummary = (products: ProductData[]): Summary => {
+    let totalRevenue = 0;
+    let totalProfit = 0;
+    let totalMargin = 0;
+    let marginCount = 0;
+    
+    products.forEach(product => {
+      if (product.sales) totalRevenue += product.sales;
+      if (product.profit) totalProfit += product.profit;
+      if (product.margin) {
+        totalMargin += product.margin;
+        marginCount++;
+      }
+    });
+    
+    return {
+      totalRevenue,
+      totalProducts: products.length,
+      totalProfit,
+      avgMargin: marginCount > 0 ? Math.round(totalMargin / marginCount) : 0
+    };
   };
-  
-  // Open drilldown for selected product
-  const handleProductDrilldown = (product: ProductData) => {
+
+  const summary = calculateSummary(products);
+
+  const calculateCategoryDistribution = (products: ProductData[]): CategoryCount[] => {
+    const categoryCounts: Record<string, number> = {};
+    
+    products.forEach(product => {
+      if (!categoryCounts[product.category]) {
+        categoryCounts[product.category] = 1;
+      } else {
+        categoryCounts[product.category] += 1;
+      }
+    });
+    
+    return Object.keys(categoryCounts).map(category => ({
+      name: category,
+      value: categoryCounts[category]
+    }));
+  };
+
+  const categoryData = calculateCategoryDistribution(products);
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        product.category.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = categoryFilter ? product.category === categoryFilter : true;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleProductClick = (product: ProductData) => {
     setSelectedProduct(product);
-    setDrilldownOpen(true);
-  };
-  
-  // Get sort icon
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return <ArrowUpDown size={14} />;
-    }
-    return sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
+    setIsDrilldownOpen(true);
   };
 
-  // Calculate summary statistics
-  const totalSales = productsData.reduce((sum, product) => sum + (product.sales || 0), 0);
-  const weightedMargin = productsData.reduce((sum, product) => sum + ((product.margin || 0) * (product.sales || 0)), 0) / totalSales;
-  const averageMargin = isNaN(weightedMargin) ? 0 : parseFloat(weightedMargin.toFixed(1));
-  
-  // Calculate category distribution
-  const categoryTotals: Record<string, number> = {};
-  productsData.forEach(product => {
-    if (categoryTotals[product.category]) {
-      categoryTotals[product.category] += product.sales || 0;
-    } else {
-      categoryTotals[product.category] = product.sales || 0;
-    }
-  });
-  
-  const categoryDistribution: {name: string, percentage: number}[] = [];
-  const totalSalesSum = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
-  
-  Object.entries(categoryTotals).forEach(([category, sales]) => {
-    const percentage = totalSalesSum > 0 ? Math.round((sales / totalSalesSum) * 100) : 0;
-    categoryDistribution.push({ name: category, percentage });
-  });
-  
-  // Sort categories by percentage (descending)
-  categoryDistribution.sort((a, b) => b.percentage - a.percentage);
-
-  // Get category color class
-  const getCategoryColorClass = (index: number) => {
-    const colors = [
-      "bg-dashboard-purple",
-      "bg-blue-500",
-      "bg-orange-500",
-      "bg-green-500",
-      "bg-red-500",
-      "bg-yellow-500"
-    ];
-    return colors[index % colors.length];
+  const clearFilters = () => {
+    setSearchQuery('');
+    setCategoryFilter(null);
+    setIsFiltering(false);
   };
 
-  return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar activePage="products" setActivePage={() => {}} />
-      <div className="flex-1 overflow-y-auto">
-        <div className="container py-6">
-          <Header 
-            title="产品销售" 
-            description="产品销量、利润率和趋势分析" 
-          />
-          
-          <div className="flex flex-col gap-6">
-            {/* Product Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">总产品销售额</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center">
-                    <span className="text-3xl font-bold">¥{totalSales.toLocaleString()}</span>
-                    <span className="ml-2 flex items-center text-green-600 text-sm">
-                      <TrendingUp size={16} className="mr-1" />
-                      +8.3%
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">相比上一季度</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">平均利润率</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center">
-                    <span className="text-3xl font-bold">{averageMargin}%</span>
-                    <span className="ml-2 flex items-center text-green-600 text-sm">
-                      <TrendingUp size={16} className="mr-1" />
-                      +1.2%
-                    </span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">相比上一季度</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">产品类别分布</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col">
-                    {categoryDistribution.slice(0, 3).map((category, index) => (
-                      <React.Fragment key={category.name}>
-                        <div className="flex justify-between items-center text-sm mb-1">
-                          <span>{category.name}</span>
-                          <span className="font-medium">{category.percentage}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                          <div className={`${getCategoryColorClass(index)} h-2 rounded-full`} style={{ width: `${category.percentage}%` }}></div>
-                        </div>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Product Table */}
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <CardTitle>产品销售列表</CardTitle>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                      placeholder="搜索产品..."
-                      className="pl-8 w-full md:w-[250px]"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">
-                    <p>加载产品数据...</p>
-                  </div>
-                ) : error ? (
-                  <div className="text-center py-8 text-red-500">
-                    <p>加载数据出错</p>
-                  </div>
-                ) : (
-                  <div className="overflow-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead 
-                            className="w-[200px] cursor-pointer"
-                            onClick={() => handleSort('name')}
-                          >
-                            <div className="flex items-center">
-                              产品名称 {getSortIcon('name')}
-                            </div>
-                          </TableHead>
-                          <TableHead 
-                            className="cursor-pointer"
-                            onClick={() => handleSort('category')}
-                          >
-                            <div className="flex items-center">
-                              类别 {getSortIcon('category')}
-                            </div>
-                          </TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer"
-                            onClick={() => handleSort('price')}
-                          >
-                            <div className="flex items-center justify-end">
-                              单价 {getSortIcon('price')}
-                            </div>
-                          </TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer"
-                            onClick={() => handleSort('sales')}
-                          >
-                            <div className="flex items-center justify-end">
-                              销售额 {getSortIcon('sales')}
-                            </div>
-                          </TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer"
-                            onClick={() => handleSort('growth')}
-                          >
-                            <div className="flex items-center justify-end">
-                              增长率 {getSortIcon('growth')}
-                            </div>
-                          </TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer"
-                            onClick={() => handleSort('margin')}
-                          >
-                            <div className="flex items-center justify-end">
-                              利润率 {getSortIcon('margin')}
-                            </div>
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredProducts.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-4">
-                              没有找到匹配的产品
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          filteredProducts.map((product) => (
-                            <TableRow 
-                              key={product.id}
-                              className="cursor-pointer hover:bg-gray-50"
-                              onClick={() => handleProductDrilldown(product)}
-                            >
-                              <TableCell className="font-medium">{product.name}</TableCell>
-                              <TableCell>{product.category}</TableCell>
-                              <TableCell className="text-right">¥{product.price}</TableCell>
-                              <TableCell className="text-right">¥{product.sales?.toLocaleString()}</TableCell>
-                              <TableCell className="text-right">
-                                <div className={`flex items-center justify-end ${product.growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {product.growth >= 0 ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
-                                  {product.growth >= 0 ? '+' : ''}{product.growth}%
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">{product.margin}%</TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <p className="text-sm text-gray-500">
-                  显示 {filteredProducts.length} 个产品（共 {productsData.length} 个）
-                </p>
-              </CardFooter>
-            </Card>
-          </div>
+  const uniqueCategories = Array.from(new Set(products.map(product => product.category)));
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <OrdersSidebar />
+        <div className="flex-1 p-6">
+          <h1 className="text-2xl font-bold mb-6">产品管理</h1>
+          <div className="text-center py-10">加载中...</div>
         </div>
       </div>
-      
-      {selectedProduct && (
-        <ProductDrilldownModal 
-          open={drilldownOpen} 
-          onClose={() => setDrilldownOpen(false)}
-          product={selectedProduct}
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <OrdersSidebar />
+        <div className="flex-1 p-6">
+          <h1 className="text-2xl font-bold mb-6">产品管理</h1>
+          <div className="text-center py-10 text-red-500">加载失败，请稍后重试</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <OrdersSidebar />
+      <div className="flex-1 overflow-auto p-6">
+        <h1 className="text-2xl font-bold mb-6">产品管理</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-500">总销售额</h3>
+              <Package className="text-purple-500" size={24} />
+            </div>
+            <p className="text-3xl font-bold mt-2">¥{summary.totalRevenue.toLocaleString()}</p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-500">产品总数</h3>
+              <Package className="text-blue-500" size={24} />
+            </div>
+            <p className="text-3xl font-bold mt-2">{summary.totalProducts}</p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-500">总利润</h3>
+              <Package className="text-green-500" size={24} />
+            </div>
+            <p className="text-3xl font-bold mt-2">¥{summary.totalProfit.toLocaleString()}</p>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-500">平均利润率</h3>
+              <Package className="text-orange-500" size={24} />
+            </div>
+            <p className="text-3xl font-bold mt-2">{summary.avgMargin}%</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-medium mb-4">销售额分析</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={products.slice(0, 7)}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip formatter={(value) => `¥${Number(value).toLocaleString()}`} />
+                <Legend />
+                <Bar dataKey="sales" name="销售额" fill="#8884d8" />
+                <Bar dataKey="profit" name="利润" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-lg font-medium mb-4">产品类别分布</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {categoryData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => [value, '数量']} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+            <h3 className="text-lg font-medium mb-4 md:mb-0">产品列表</h3>
+            
+            <div className="flex flex-col sm:flex-row w-full md:w-auto gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Input
+                  type="text"
+                  placeholder="搜索产品..."
+                  className="pl-10 w-full sm:w-64"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Filter size={18} />
+                    筛选
+                    <ChevronDown size={16} />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">分类</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {uniqueCategories.map((category) => (
+                        <Badge
+                          key={category}
+                          variant={categoryFilter === category ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setCategoryFilter(category);
+                            setIsFiltering(true);
+                          }}
+                        >
+                          {category}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {(searchQuery || categoryFilter) && (
+                <Button variant="ghost" onClick={clearFilters} className="flex items-center gap-2">
+                  <X size={18} />
+                  清除筛选
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {isFiltering && categoryFilter && (
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-sm text-gray-500">筛选条件:</span>
+              <Badge className="flex items-center gap-1">
+                {categoryFilter}
+                <button onClick={() => setCategoryFilter(null)}>
+                  <X size={14} />
+                </button>
+              </Badge>
+            </div>
+          )}
+          
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>产品名称</TableHead>
+                  <TableHead>类别</TableHead>
+                  <TableHead className="text-right">价格</TableHead>
+                  <TableHead className="text-right">库存</TableHead>
+                  <TableHead className="text-right">销售额</TableHead>
+                  <TableHead className="text-right">增长率</TableHead>
+                  <TableHead className="text-right">利润率</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product) => (
+                  <TableRow 
+                    key={product.id} 
+                    className="cursor-pointer"
+                    onClick={() => handleProductClick(product)}
+                  >
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{product.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">¥{product.price}</TableCell>
+                    <TableCell className="text-right">{product.inventory || 0}</TableCell>
+                    <TableCell className="text-right">¥{product.sales?.toLocaleString() || 0}</TableCell>
+                    <TableCell className="text-right">
+                      <span className={product.growth && product.growth > 0 ? 'text-green-500' : 'text-red-500'}>
+                        {product.growth ? `${product.growth}%` : '0%'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">{product.margin || 0}%</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" onClick={(e) => {
+                        e.stopPropagation();
+                        handleProductClick(product);
+                      }}>
+                        <MoreHorizontal size={18} />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+        
+        <ProductDrilldownModal
+          isOpen={isDrilldownOpen}
+          onClose={() => setIsDrilldownOpen(false)}
+          product={selectedProduct as any}
         />
-      )}
+      </div>
     </div>
   );
 };
