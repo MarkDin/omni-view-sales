@@ -4,9 +4,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
-import { Upload, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Define the mapping between Excel headers and database fields
 const headerMapping: Record<string, string> = {
@@ -22,16 +23,30 @@ const headerMapping: Record<string, string> = {
   '下单金额': 'order_amount'
 };
 
+// Define column length constraints to match database schema
+const columnLengthLimits: Record<string, number> = {
+  'customer_code': 10,
+  'customer_name': 100,
+  'customer_short_name': 100,
+  'country': 50,
+  'type': 50,
+  'product_type': 50,
+  'material': 50,
+  'sales_person': 50
+};
+
 const ExcelUpload = () => {
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileData, setFileData] = useState<any[]>([]);
   const [fileName, setFileName] = useState('');
+  const [validationWarnings, setValidationWarnings] = useState<string[]>([]);
 
   // Function to handle file upload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
+    setValidationWarnings([]);
 
     if (!files || files.length === 0) {
       return;
@@ -89,15 +104,27 @@ const ExcelUpload = () => {
             }
           });
 
-          // Process data rows
-          const processedData = rows.map((row: any) => {
+          // Process data rows with validation
+          let warnings: string[] = [];
+          const processedData = rows.map((row: any, index: number) => {
             const recordData: Record<string, any> = {};
+            const rowNumber = index + 2; // +2 because we start from the second row (1-indexed) in Excel
 
             // Extract field values using the header mapping
             for (const [cell, fieldName] of headerMap.entries()) {
               if (row[cell] !== undefined) {
+                // Validate string field lengths and truncate if needed
+                if (columnLengthLimits[fieldName] && typeof row[cell] === 'string') {
+                  const value = String(row[cell]);
+                  if (value.length > columnLengthLimits[fieldName]) {
+                    warnings.push(`第${rowNumber}行："${value}" 超出 ${fieldName} 字段长度限制，已自动截断`);
+                    recordData[fieldName] = value.substring(0, columnLengthLimits[fieldName]);
+                  } else {
+                    recordData[fieldName] = value;
+                  }
+                }
                 // Special handling for dates
-                if (fieldName === 'order_month' && row[cell]) {
+                else if (fieldName === 'order_month' && row[cell]) {
                   try {
                     // Handle Excel date number format
                     if (typeof row[cell] === 'number') {
@@ -144,6 +171,15 @@ const ExcelUpload = () => {
 
             return recordData;
           });
+
+          if (warnings.length > 0) {
+            // Only show up to 5 warnings to avoid overwhelming the user
+            const displayWarnings = warnings.slice(0, 5);
+            if (warnings.length > 5) {
+              displayWarnings.push(`还有 ${warnings.length - 5} 个警告，数据已经自动处理`);
+            }
+            setValidationWarnings(displayWarnings);
+          }
 
           setFileData(processedData);
           setUploadProgress(70);
@@ -209,6 +245,20 @@ const ExcelUpload = () => {
                     上传Excel文件，系统将自动解析并导入数据到订单表
                   </p>
 
+                  {validationWarnings.length > 0 && (
+                    <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <AlertTitle className="text-yellow-800">数据验证警告</AlertTitle>
+                      <AlertDescription>
+                        <ul className="list-disc pl-5 text-sm">
+                          {validationWarnings.map((warning, i) => (
+                            <li key={i} className="text-yellow-700">{warning}</li>
+                          ))}
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <Button
@@ -264,18 +314,18 @@ const ExcelUpload = () => {
                   <div className="bg-gray-50 p-4 rounded-md text-sm">
                     <p className="font-medium mb-2">Excel表头必须包含以下字段之一或多个：</p>
                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <li>客户编码 → customer_code</li>
-                      <li>客户名称 → customer_name</li>
-                      <li>客户简称 → customer_short_name</li>
-                      <li>国家 → country</li>
-                      <li>类型 → type</li>
-                      <li>车型/尺寸 → product_type</li>
-                      <li>材质 → material</li>
+                      <li>客户编码 → customer_code (最大10字符)</li>
+                      <li>客户名称 → customer_name (最大100字符)</li>
+                      <li>客户简称 → customer_short_name (最大100字符)</li>
+                      <li>国家 → country (最大50字符)</li>
+                      <li>类型 → type (最大50字符)</li>
+                      <li>车型/尺寸 → product_type (最大50字符)</li>
+                      <li>材质 → material (最大50字符)</li>
                       <li>月份 → order_month</li>
-                      <li>业务员 → sales_person</li>
+                      <li>业务员 → sales_person (最大50字符)</li>
                       <li>下单金额 → order_amount</li>
                     </ul>
-                    <p className="mt-4 text-xs text-gray-500">注：系统会自动忽略不匹配的字段</p>
+                    <p className="mt-4 text-xs text-gray-500">注：系统会自动忽略不匹配的字段，超长字段会被自动截断</p>
                   </div>
 
                   <div className="mt-6 flex justify-center">
