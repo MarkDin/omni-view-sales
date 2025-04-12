@@ -15,8 +15,7 @@ const headerMapping: Record<string, string> = {
   '客户简称': 'customer_short_name',
   '国家': 'country',
   '类型': 'type',
-  '车型': 'product_type',
-  '尺寸': 'product_type', // This will be combined with product_type
+  '车型尺寸': 'product_type',
   '材质': 'material',
   '月份': 'order_month',
   '业务员': 'sales_person',
@@ -29,18 +28,18 @@ const ExcelUpload = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileData, setFileData] = useState<any[]>([]);
   const [fileName, setFileName] = useState('');
-  
+
   // Function to handle file upload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    
+
     if (!files || files.length === 0) {
       return;
     }
-    
+
     const file = files[0];
     setFileName(file.name);
-    
+
     // Check if file is an Excel file
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
       toast({
@@ -50,37 +49,37 @@ const ExcelUpload = () => {
       });
       return;
     }
-    
+
     try {
       setIsUploading(true);
       setUploadProgress(10);
-      
+
       // Read the Excel file using FileReader
       const reader = new FileReader();
-      
+
       reader.onload = async (e) => {
         try {
           setUploadProgress(30);
-          
+
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: 'array' });
-          
+
           // Get the first sheet
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          
+
           // Convert to JSON
           const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 'A' });
-          
+
           setUploadProgress(50);
-          
+
           if (jsonData.length < 2) {
             throw new Error('Excel文件没有数据或格式不正确');
           }
-          
+
           // Extract headers from first row
           const headers = jsonData[0];
           const rows = jsonData.slice(1);
-          
+
           // Map Excel headers to database fields
           const headerMap = new Map();
           Object.entries(headers).forEach(([cell, value]) => {
@@ -89,11 +88,11 @@ const ExcelUpload = () => {
               headerMap.set(cell, headerMapping[headerValue]);
             }
           });
-          
+
           // Process data rows
           const processedData = rows.map((row: any) => {
             const recordData: Record<string, any> = {};
-            
+
             // Extract field values using the header mapping
             for (const [cell, fieldName] of headerMap.entries()) {
               if (row[cell] !== undefined) {
@@ -115,7 +114,7 @@ const ExcelUpload = () => {
                   } catch (e) {
                     console.error('Date parsing error:', e);
                   }
-                } 
+                }
                 // Special handling for numeric values
                 else if (fieldName === 'order_amount') {
                   if (typeof row[cell] === 'number') {
@@ -131,7 +130,7 @@ const ExcelUpload = () => {
                   // If this is the first time seeing product_type, initialize it
                   if (!recordData[fieldName]) {
                     recordData[fieldName] = row[cell];
-                  } 
+                  }
                   // If we already have product_type and this is size, combine them
                   else {
                     recordData[fieldName] = `${recordData[fieldName]}-${row[cell]}`;
@@ -142,29 +141,29 @@ const ExcelUpload = () => {
                 }
               }
             }
-            
+
             return recordData;
           });
-          
+
           setFileData(processedData);
           setUploadProgress(70);
-          
+
           // Upload to Supabase
           const { error } = await supabase
             .from('customer_orders')
             .insert(processedData);
-          
+
           if (error) {
             throw new Error(`数据上传失败: ${error.message}`);
           }
-          
+
           setUploadProgress(100);
-          
+
           toast({
             title: "上传成功",
             description: `成功导入 ${processedData.length} 条订单数据`,
           });
-          
+
         } catch (error) {
           console.error('Excel处理错误:', error);
           toast({
@@ -176,9 +175,9 @@ const ExcelUpload = () => {
           setIsUploading(false);
         }
       };
-      
+
       reader.readAsArrayBuffer(file);
-      
+
     } catch (error) {
       console.error('文件读取错误:', error);
       toast({
@@ -190,16 +189,16 @@ const ExcelUpload = () => {
       setUploadProgress(0);
     }
   };
-  
+
   return (
     <div className="flex h-screen bg-gray-100">
       <OrdersSidebar />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="h-16 border-b flex items-center justify-between px-4 bg-white">
           <h1 className="text-xl font-semibold">Excel上传解析</h1>
         </div>
-        
+
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="max-w-3xl mx-auto">
             <div className="bg-white p-6 rounded-lg shadow-md mb-6">
@@ -209,7 +208,7 @@ const ExcelUpload = () => {
                   <p className="text-sm text-gray-500 mb-4">
                     上传Excel文件，系统将自动解析并导入数据到订单表
                   </p>
-                  
+
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <Button
@@ -238,19 +237,19 @@ const ExcelUpload = () => {
                         onChange={handleFileUpload}
                         disabled={isUploading}
                       />
-                      
+
                       {fileName && (
                         <span className="text-sm text-gray-500">
                           已选择文件: {fileName}
                         </span>
                       )}
                     </div>
-                    
+
                     {isUploading && (
                       <div>
                         <div className="h-2 bg-gray-200 rounded-full">
-                          <div 
-                            className="h-full bg-blue-500 rounded-full transition-all duration-300" 
+                          <div
+                            className="h-full bg-blue-500 rounded-full transition-all duration-300"
                             style={{ width: `${uploadProgress}%` }}
                           />
                         </div>
@@ -259,7 +258,7 @@ const ExcelUpload = () => {
                     )}
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="text-lg font-medium mb-2">字段映射说明</h3>
                   <div className="bg-gray-50 p-4 rounded-md text-sm">
@@ -278,7 +277,7 @@ const ExcelUpload = () => {
                     </ul>
                     <p className="mt-4 text-xs text-gray-500">注：系统会自动忽略不匹配的字段</p>
                   </div>
-                  
+
                   <div className="mt-6 flex justify-center">
                     <Button variant="outline" className="flex items-center gap-2">
                       <FileSpreadsheet className="h-4 w-4" />
@@ -288,7 +287,7 @@ const ExcelUpload = () => {
                 </div>
               </div>
             </div>
-            
+
             {fileData.length > 0 && (
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <h3 className="text-lg font-medium mb-4">预览数据 (前5行)</h3>
