@@ -9,7 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          company: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          industry: string | null
+          last_purchase: string | null
+          lifetime_value: number | null
+          name: string
+          phone: string | null
+          purchase_count: number | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          industry?: string | null
+          last_purchase?: string | null
+          lifetime_value?: number | null
+          name: string
+          phone?: string | null
+          purchase_count?: number | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          industry?: string | null
+          last_purchase?: string | null
+          lifetime_value?: number | null
+          name?: string
+          phone?: string | null
+          purchase_count?: number | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string
+          created_at: string | null
+          customers: number | null
+          growth: number | null
+          id: string
+          inventory: number | null
+          margin: number | null
+          name: string
+          price: number
+          profit: number | null
+          sales: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          customers?: number | null
+          growth?: number | null
+          id?: string
+          inventory?: number | null
+          margin?: number | null
+          name: string
+          price: number
+          profit?: number | null
+          sales?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          customers?: number | null
+          growth?: number | null
+          id?: string
+          inventory?: number | null
+          margin?: number | null
+          name?: string
+          price?: number
+          profit?: number | null
+          sales?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
