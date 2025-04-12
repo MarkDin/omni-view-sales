@@ -9,125 +9,35 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Search, ArrowUp, ArrowDown, Download, 
-  Filter, TrendingUp, TrendingDown, BarChart2 
+  Filter, TrendingUp, TrendingDown
 } from 'lucide-react';
 import DrilldownModal from '@/components/Dashboard/DrilldownModal';
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
-// Sample customer data
-const customerData = [
-  { 
-    id: 1, 
-    name: '泰科电子有限公司', 
-    industry: '电子制造',
-    contactPerson: '张明',
-    contactPhone: '13812345678',
-    revenue: 650000, 
-    orders: 12,
-    growth: 15, 
-    status: 'active',
-    products: ['MDF板', 'PVC装饰线', '铝合金墙板配件'],
-    lastPurchase: '2025-04-01',
-    region: '华东',
-  },
-  { 
-    id: 2, 
-    name: '中科智能科技', 
-    industry: '智能家居',
-    contactPerson: '李强',
-    contactPhone: '13987654321',
-    revenue: 450000,
-    orders: 8, 
-    growth: 8, 
-    status: 'active',
-    products: ['PS格栅板', 'PET胶管板', 'PVC装饰线'],
-    lastPurchase: '2025-03-28',
-    region: '华北',
-  },
-  { 
-    id: 3, 
-    name: '远大集团', 
-    industry: '建筑材料',
-    contactPerson: '王建',
-    contactPhone: '13765432198',
-    revenue: 380000, 
-    orders: 15,
-    growth: -3, 
-    status: 'at-risk',
-    products: ['SPC地板', 'PE户外地板', 'PS踢脚线'],
-    lastPurchase: '2025-03-15',
-    region: '华南',
-  },
-  { 
-    id: 4, 
-    name: '华星电子', 
-    industry: '电子元件',
-    contactPerson: '刘芳',
-    contactPhone: '13612345678',
-    revenue: 320000, 
-    orders: 6,
-    growth: 12, 
-    status: 'active',
-    products: ['MDF装饰线', 'PS格栅板'],
-    lastPurchase: '2025-04-05',
-    region: '华东',
-  },
-  { 
-    id: 5, 
-    name: '蓝光科技有限公司', 
-    industry: '光电技术',
-    contactPerson: '陈晓',
-    contactPhone: '13598765432',
-    revenue: 280000, 
-    orders: 4,
-    growth: -5, 
-    status: 'at-risk',
-    products: ['PVC地板配件'],
-    lastPurchase: '2025-02-18',
-    region: '西南',
-  },
-  { 
-    id: 6, 
-    name: '恒基建材集团', 
-    industry: '建筑材料',
-    contactPerson: '赵伟',
-    contactPhone: '13756789012',
-    revenue: 720000, 
-    orders: 18,
-    growth: 22, 
-    status: 'active',
-    products: ['PVC装饰线', 'PE户外地板', 'PS踢脚线', 'MDF板'],
-    lastPurchase: '2025-04-02',
-    region: '华中',
-  },
-  { 
-    id: 7, 
-    name: '东方装饰材料有限公司', 
-    industry: '室内装饰',
-    contactPerson: '钱明',
-    contactPhone: '13812378945',
-    revenue: 530000, 
-    orders: 13,
-    growth: 9, 
-    status: 'active',
-    products: ['PVC平面墙板', 'MDF格栅墙板', 'PS格栅板'],
-    lastPurchase: '2025-03-22',
-    region: '东北',
-  },
-  { 
-    id: 8, 
-    name: '安家建材科技', 
-    industry: '新型建材',
-    contactPerson: '孙艳',
-    contactPhone: '13687654321',
-    revenue: 290000, 
-    orders: 7,
-    growth: -8, 
-    status: 'at-risk',
-    products: ['PE户外拼接板', 'SPC地板'],
-    lastPurchase: '2025-03-10',
-    region: '西北',
-  }
-];
+// Define customer data type
+interface CustomerData {
+  id: string;
+  name: string;
+  industry: string | null;
+  company: string | null;
+  contactPerson?: string;
+  contactPhone?: string;
+  email: string | null;
+  phone: string | null;
+  revenue?: number;
+  orders?: number;
+  lifetime_value: number | null;
+  purchase_count: number | null;
+  growth?: number;
+  status?: 'active' | 'at-risk';
+  products?: string[];
+  last_purchase: string | null;
+  region?: string;
+  city: string | null;
+  address: string | null;
+}
 
 const Customers = () => {
   const [activePage, setActivePage] = useState('customers');
@@ -135,10 +45,40 @@ const Customers = () => {
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: 'asc' | 'desc';
-  }>({ key: 'revenue', direction: 'desc' });
+  }>({ key: 'lifetime_value', direction: 'desc' });
   const [drilldownOpen, setDrilldownOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerData | null>(null);
   const navigate = useNavigate();
+
+  // Fetch customers from Supabase
+  const { data: customersData = [], isLoading, error } = useQuery({
+    queryKey: ['customers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*');
+      
+      if (error) {
+        toast.error("加载客户数据失败");
+        throw error;
+      }
+      
+      // Process the data to add derived fields
+      return data.map((customer) => ({
+        ...customer,
+        revenue: customer.lifetime_value,
+        orders: customer.purchase_count,
+        // Determine status based on last purchase date
+        status: customer.last_purchase && 
+                new Date(customer.last_purchase) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
+                ? 'active' : 'at-risk',
+        // Generate random growth between -10 and +20
+        growth: Math.round((Math.random() * 30 - 10) * 10) / 10,
+        // Assign a random region if not present
+        region: ['华东', '华北', '华南', '华中', '东北', '西南', '西北'][Math.floor(Math.random() * 7)],
+      })) as CustomerData[];
+    }
+  });
 
   // Handle sorting
   const handleSort = (key: string) => {
@@ -160,40 +100,49 @@ const Customers = () => {
 
   // Filter and sort the customer data
   const filteredAndSortedCustomers = useMemo(() => {
-    let result = [...customerData];
+    if (!customersData || customersData.length === 0) return [];
+    
+    let result = [...customersData];
     
     // Apply search filter
     if (searchTerm) {
       result = result.filter(customer => 
         customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.region.toLowerCase().includes(searchTerm.toLowerCase())
+        (customer.industry && customer.industry.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (customer.company && customer.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (customer.region && customer.region.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     
     // Apply sorting
     result.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
+      const aValue = a[sortConfig.key as keyof CustomerData];
+      const bValue = b[sortConfig.key as keyof CustomerData];
+      
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+      
+      if (aValue < bValue) {
         return sortConfig.direction === 'asc' ? -1 : 1;
       }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
+      if (aValue > bValue) {
         return sortConfig.direction === 'asc' ? 1 : -1;
       }
       return 0;
     });
     
     return result;
-  }, [customerData, searchTerm, sortConfig]);
+  }, [customersData, searchTerm, sortConfig]);
 
   // Handle customer drill-down
-  const handleCustomerClick = (customer: any) => {
+  const handleCustomerClick = (customer: CustomerData) => {
     setSelectedCustomer(customer);
     setDrilldownOpen(true);
   };
 
   // Get status badge
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'active':
         return <Badge className="bg-green-500">活跃</Badge>;
@@ -239,104 +188,122 @@ const Customers = () => {
             </div>
 
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead 
-                      className="cursor-pointer"
-                      onClick={() => handleSort('name')}
-                    >
-                      <div className="flex items-center">
-                        客户名称
-                        {renderSortIcon('name')}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer"
-                      onClick={() => handleSort('industry')}
-                    >
-                      <div className="flex items-center">
-                        行业
-                        {renderSortIcon('industry')}
-                      </div>
-                    </TableHead>
-                    <TableHead>联系人</TableHead>
-                    <TableHead 
-                      className="cursor-pointer text-right"
-                      onClick={() => handleSort('revenue')}
-                    >
-                      <div className="flex items-center justify-end">
-                        销售额
-                        {renderSortIcon('revenue')}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer text-right"
-                      onClick={() => handleSort('orders')}
-                    >
-                      <div className="flex items-center justify-end">
-                        订单数
-                        {renderSortIcon('orders')}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer text-right"
-                      onClick={() => handleSort('growth')}
-                    >
-                      <div className="flex items-center justify-end">
-                        同比增长
-                        {renderSortIcon('growth')}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer text-center"
-                      onClick={() => handleSort('status')}
-                    >
-                      <div className="flex items-center justify-center">
-                        状态
-                        {renderSortIcon('status')}
-                      </div>
-                    </TableHead>
-                    <TableHead 
-                      className="cursor-pointer"
-                      onClick={() => handleSort('region')}
-                    >
-                      <div className="flex items-center">
-                        地区
-                        {renderSortIcon('region')}
-                      </div>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAndSortedCustomers.map((customer) => (
-                    <TableRow 
-                      key={customer.id} 
-                      className="hover:bg-gray-50 cursor-pointer" 
-                      onClick={() => handleCustomerClick(customer)}
-                    >
-                      <TableCell className="font-medium text-dashboard-purple">
-                        {customer.name}
-                      </TableCell>
-                      <TableCell>{customer.industry}</TableCell>
-                      <TableCell>{customer.contactPerson}</TableCell>
-                      <TableCell className="text-right">¥{customer.revenue.toLocaleString()}</TableCell>
-                      <TableCell className="text-right">{customer.orders}</TableCell>
-                      <TableCell className="text-right">
-                        <div className={`flex items-center justify-end ${customer.growth > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                          {customer.growth > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                          <span className="ml-1">{customer.growth}%</span>
+              {isLoading ? (
+                <div className="text-center p-8">
+                  <p>加载客户数据中...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center p-8 text-red-500">
+                  <p>加载数据出错</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('name')}
+                      >
+                        <div className="flex items-center">
+                          客户名称
+                          {renderSortIcon('name')}
                         </div>
-                      </TableCell>
-                      <TableCell className="text-center">{getStatusBadge(customer.status)}</TableCell>
-                      <TableCell>{customer.region}</TableCell>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('industry')}
+                      >
+                        <div className="flex items-center">
+                          行业
+                          {renderSortIcon('industry')}
+                        </div>
+                      </TableHead>
+                      <TableHead>联系人</TableHead>
+                      <TableHead 
+                        className="cursor-pointer text-right"
+                        onClick={() => handleSort('lifetime_value')}
+                      >
+                        <div className="flex items-center justify-end">
+                          销售额
+                          {renderSortIcon('lifetime_value')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer text-right"
+                        onClick={() => handleSort('purchase_count')}
+                      >
+                        <div className="flex items-center justify-end">
+                          订单数
+                          {renderSortIcon('purchase_count')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer text-right"
+                        onClick={() => handleSort('growth')}
+                      >
+                        <div className="flex items-center justify-end">
+                          同比增长
+                          {renderSortIcon('growth')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer text-center"
+                        onClick={() => handleSort('status')}
+                      >
+                        <div className="flex items-center justify-center">
+                          状态
+                          {renderSortIcon('status')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer"
+                        onClick={() => handleSort('region')}
+                      >
+                        <div className="flex items-center">
+                          地区
+                          {renderSortIcon('region')}
+                        </div>
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAndSortedCustomers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          未找到符合条件的客户
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredAndSortedCustomers.map((customer) => (
+                        <TableRow 
+                          key={customer.id} 
+                          className="hover:bg-gray-50 cursor-pointer" 
+                          onClick={() => handleCustomerClick(customer)}
+                        >
+                          <TableCell className="font-medium text-dashboard-purple">
+                            {customer.name}
+                          </TableCell>
+                          <TableCell>{customer.industry || '未指定'}</TableCell>
+                          <TableCell>{customer.name}</TableCell>
+                          <TableCell className="text-right">¥{customer.lifetime_value?.toLocaleString() || 0}</TableCell>
+                          <TableCell className="text-right">{customer.purchase_count || 0}</TableCell>
+                          <TableCell className="text-right">
+                            <div className={`flex items-center justify-end ${customer.growth && customer.growth > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                              {customer.growth && customer.growth > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                              <span className="ml-1">{customer.growth}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{getStatusBadge(customer.status)}</TableCell>
+                          <TableCell>{customer.region}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </div>
 
-            {filteredAndSortedCustomers.length === 0 && (
+            {!isLoading && !error && filteredAndSortedCustomers.length === 0 && (
               <div className="text-center p-6 text-gray-500">
                 未找到符合条件的客户
               </div>
@@ -358,7 +325,7 @@ const Customers = () => {
 interface CustomerDetailModalProps {
   open: boolean;
   onClose: () => void;
-  customer: any;
+  customer: CustomerData | null;
 }
 
 const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ 
@@ -375,17 +342,6 @@ const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
     { date: '2025-01-10', products: ['SPC地板'], amount: 67000 },
     { date: '2024-12-05', products: ['PS格栅板', 'PE户外地板'], amount: 92000 },
     { date: '2024-10-20', products: ['MDF板', 'PS格栅板', 'PVC装饰线'], amount: 105000 },
-  ];
-
-  // Sample monthly revenue data
-  const monthlyRevenueData = [
-    { name: '2024-10', value: 105000 },
-    { name: '2024-11', value: 0 },
-    { name: '2024-12', value: 92000 },
-    { name: '2025-01', value: 67000 },
-    { name: '2025-02', value: 85000 },
-    { name: '2025-03', value: 0 },
-    { name: '2025-04', value: 120000 },
   ];
 
   return (

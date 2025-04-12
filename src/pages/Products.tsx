@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Dashboard/Sidebar';
 import Header from '@/components/Dashboard/Header';
@@ -27,12 +26,13 @@ interface ProductData {
   name: string;
   category: string;
   price: number;
-  inventory: number;
-  sales: number;
-  growth: number;
-  profit: number;
-  margin: number;
-  customers: number;
+  inventory: number | null;
+  sales: number | null;
+  growth: number | null;
+  profit: number | null;
+  margin: number | null;
+  customers: number | null;
+  created_at: string | null;
 }
 
 const Products = () => {
@@ -99,17 +99,17 @@ const Products = () => {
   };
 
   // Calculate summary statistics
-  const totalSales = productsData.reduce((sum, product) => sum + product.sales, 0);
-  const weightedMargin = productsData.reduce((sum, product) => sum + (product.margin * product.sales), 0) / totalSales;
+  const totalSales = productsData.reduce((sum, product) => sum + (product.sales || 0), 0);
+  const weightedMargin = productsData.reduce((sum, product) => sum + ((product.margin || 0) * (product.sales || 0)), 0) / totalSales;
   const averageMargin = isNaN(weightedMargin) ? 0 : parseFloat(weightedMargin.toFixed(1));
   
   // Calculate category distribution
   const categoryTotals: Record<string, number> = {};
   productsData.forEach(product => {
     if (categoryTotals[product.category]) {
-      categoryTotals[product.category] += product.sales;
+      categoryTotals[product.category] += product.sales || 0;
     } else {
-      categoryTotals[product.category] = product.sales;
+      categoryTotals[product.category] = product.sales || 0;
     }
   });
   
@@ -301,7 +301,7 @@ const Products = () => {
                               <TableCell className="font-medium">{product.name}</TableCell>
                               <TableCell>{product.category}</TableCell>
                               <TableCell className="text-right">¥{product.price}</TableCell>
-                              <TableCell className="text-right">¥{product.sales.toLocaleString()}</TableCell>
+                              <TableCell className="text-right">¥{product.sales?.toLocaleString()}</TableCell>
                               <TableCell className="text-right">
                                 <div className={`flex items-center justify-end ${product.growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                   {product.growth >= 0 ? <TrendingUp size={16} className="mr-1" /> : <TrendingDown size={16} className="mr-1" />}
