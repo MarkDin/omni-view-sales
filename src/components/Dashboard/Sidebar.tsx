@@ -4,23 +4,26 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, BarChart3, Users, ShoppingCart, 
   Target, Settings, ChevronLeft, ChevronRight,
-  PieChart, MapPin, Calendar, HelpCircle
+  PieChart, MapPin, Calendar, HelpCircle, Package
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface SidebarItemProps {
   icon: React.ElementType;
   label: string;
   active?: boolean;
   onClick?: () => void;
+  to?: string;
 }
 
 const SidebarItem: React.FC<SidebarItemProps> = ({ 
   icon: Icon, 
   label, 
   active = false, 
-  onClick 
+  onClick,
+  to
 }) => {
-  return (
+  const content = (
     <div 
       className={cn(
         "flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors",
@@ -34,6 +37,12 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
       <span className="font-medium">{label}</span>
     </div>
   );
+  
+  return to ? (
+    <Link to={to}>{content}</Link>
+  ) : (
+    content
+  );
 };
 
 interface SidebarProps {
@@ -45,10 +54,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   const sidebarItems = [
-    { icon: LayoutDashboard, label: '概览', id: 'overview' },
+    { icon: LayoutDashboard, label: '概览', id: 'overview', to: '/' },
     { icon: BarChart3, label: '销售业绩', id: 'performance' },
-    { icon: Users, label: '客户分析', id: 'customers' },
-    { icon: ShoppingCart, label: '产品销售', id: 'products' },
+    { icon: Users, label: '客户分析', id: 'customers', to: '/customers' },
+    { icon: Package, label: '产品销售', id: 'products', to: '/products' },
     { icon: Target, label: '销售漏斗', id: 'pipeline' },
     { icon: MapPin, label: '区域分析', id: 'regions' },
     { icon: PieChart, label: '销售渠道', id: 'channels' },
@@ -87,6 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage }) => {
             label={collapsed ? '' : item.label}
             active={activePage === item.id}
             onClick={() => setActivePage(item.id)}
+            to={item.to}
           />
         ))}
       </div>
