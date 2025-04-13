@@ -7,3 +7,4 @@ alwaysApply: true
 # Your rule content
 
 - 后端服务使用Supabase
+- supbase的数据库schema路径为src/integrations/supabase/types.ts
