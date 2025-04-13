@@ -24,16 +24,16 @@ const headerMapping: Record<string, string> = {
 };
 
 // Define column length constraints to match database schema
-const columnLengthLimits: Record<string, number> = {
-  'customer_code': 10,
-  'customer_name': 100,
-  'customer_short_name': 100,
-  'country': 50,
-  'type': 50,
-  'product_type': 50,
-  'material': 50,
-  'sales_person': 50
-};
+// const columnLengthLimits: Record<string, number> = {
+//   'customer_code': 10,
+//   'customer_name': 100,
+//   'customer_short_name': 100,
+//   'country': 50,
+//   'type': 50,
+//   'product_type': 50,
+//   'material': 50,
+//   'sales_person': 50
+// };
 
 const ExcelUpload = () => {
   const { toast } = useToast();
@@ -113,54 +113,14 @@ const ExcelUpload = () => {
             // Extract field values using the header mapping
             for (const [cell, fieldName] of headerMap.entries()) {
               if (row[cell] !== undefined) {
-                // Validate string field lengths and truncate if needed
-                if (columnLengthLimits[fieldName] && typeof row[cell] === 'string') {
-                  const value = String(row[cell]);
-                  if (value.length > columnLengthLimits[fieldName]) {
-                    warnings.push(`第${rowNumber}行："${value}" 超出 ${fieldName} 字段长度限制，已自动截断`);
-                    recordData[fieldName] = value.substring(0, columnLengthLimits[fieldName]);
-                  } else {
-                    recordData[fieldName] = value;
-                  }
-                }
-                // Special handling for dates
-                else if (fieldName === 'order_month' && row[cell]) {
-                  try {
-                    // Handle Excel date number format
-                    if (typeof row[cell] === 'number') {
-                      const excelEpoch = new Date(1899, 11, 30);
-                      const date = new Date(excelEpoch.getTime() + row[cell] * 24 * 60 * 60 * 1000);
-                      recordData[fieldName] = date.toISOString().split('T')[0];
-                    } else if (typeof row[cell] === 'string') {
-                      // Try to parse string date
-                      const date = new Date(row[cell]);
-                      if (!isNaN(date.getTime())) {
-                        recordData[fieldName] = date.toISOString().split('T')[0];
-                      }
-                    }
-                  } catch (e) {
-                    console.error('Date parsing error:', e);
-                  }
-                }
-                // Special handling for numeric values
-                else if (fieldName === 'order_amount') {
+
+                if (fieldName === 'order_amount') {
                   if (typeof row[cell] === 'number') {
                     recordData[fieldName] = row[cell];
                   } else if (typeof row[cell] === 'string') {
                     // Remove any currency symbols or commas and convert to number
                     const numStr = row[cell].replace(/[^\d.-]/g, '');
                     recordData[fieldName] = parseFloat(numStr);
-                  }
-                }
-                // Handle product_type and size combination
-                else if (fieldName === 'product_type') {
-                  // If this is the first time seeing product_type, initialize it
-                  if (!recordData[fieldName]) {
-                    recordData[fieldName] = row[cell];
-                  }
-                  // If we already have product_type and this is size, combine them
-                  else {
-                    recordData[fieldName] = `${recordData[fieldName]}-${row[cell]}`;
                   }
                 }
                 else {

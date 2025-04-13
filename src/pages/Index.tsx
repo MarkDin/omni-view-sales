@@ -45,8 +45,7 @@ const Index = () => {
       <DrilldownModal
         open={isDrilldownOpen}
         onClose={() => setIsDrilldownOpen(false)}
-        section={section || 'revenue'}
-        data={section === 'customer' ? { id: selectedCustomerId } : undefined}
+        section={selectedCustomerId}
       />
     </div>
   );

@@ -1,0 +1,1 @@
+supabase gen types typescript --project-id pugtpiijinkulpbnbgji --schema public > src/integrations/supabase/types.ts

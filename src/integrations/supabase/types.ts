@@ -96,6 +96,47 @@ export type Database = {
         }
         Relationships: []
       }
+      email: {
+        Row: {
+          content: string | null
+          created_at: string
+          customer_id: string | null
+          id: number
+          receiver: string
+          send_at: string | null
+          sender: string
+          topic: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: number
+          receiver: string
+          send_at?: string | null
+          sender: string
+          topic?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          customer_id?: string | null
+          id?: number
+          receiver?: string
+          send_at?: string | null
+          sender?: string
+          topic?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string
