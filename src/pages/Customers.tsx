@@ -4,22 +4,22 @@ import { useNavigate } from 'react-router-dom';
 import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  TrendingUp, 
+import {
+  Search,
+  Filter,
+  Download,
+  TrendingUp,
   TrendingDown,
-  ArrowUp, 
-  ArrowDown 
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
-import { 
-  Table, 
-  TableHeader, 
-  TableRow, 
-  TableHead, 
-  TableBody, 
-  TableCell 
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,29 +27,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import Header from '@/components/Dashboard/Header';
 import DrilldownModal from '@/components/Dashboard/DrilldownModal';
+import { CustomerData } from '@/types/customer';
 
-// Define customer data type
-interface CustomerData {
-  id: string;
-  name: string;
-  industry: string | null;
-  company: string | null;
-  contactPerson?: string;
-  contactPhone?: string;
-  email: string | null;
-  phone: string | null;
-  revenue?: number;
-  orders?: number;
-  lifetime_value: number | null;
-  purchase_count: number | null;
-  growth?: number;
-  status?: 'active' | 'at-risk';
-  products?: string[];
-  last_purchase: string | null;
-  region?: string;
-  city: string | null;
-  address: string | null;
-}
 
 const Customers = () => {
   const [activePage, setActivePage] = useState('customers');
@@ -69,21 +48,21 @@ const Customers = () => {
       const { data, error } = await supabase
         .from('customers')
         .select('*');
-      
+
       if (error) {
         toast.error("加载客户数据失败");
         throw error;
       }
-      
+
       // Process the data to add derived fields
       return data.map((customer) => ({
         ...customer,
         revenue: customer.lifetime_value,
         orders: customer.purchase_count,
         // Determine status based on last purchase date
-        status: customer.last_purchase && 
-                new Date(customer.last_purchase) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
-                ? 'active' : 'at-risk',
+        status: customer.last_purchase &&
+          new Date(customer.last_purchase) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          ? 'active' : 'at-risk',
         // Generate random growth between -10 and +20
         growth: Math.round((Math.random() * 30 - 10) * 10) / 10,
         // Assign a random region if not present
@@ -104,21 +83,21 @@ const Customers = () => {
   // Render sort indicator
   const renderSortIcon = (key: string) => {
     if (sortConfig.key !== key) return null;
-    
-    return sortConfig.direction === 'asc' 
-      ? <ArrowUp size={14} className="ml-1" /> 
+
+    return sortConfig.direction === 'asc'
+      ? <ArrowUp size={14} className="ml-1" />
       : <ArrowDown size={14} className="ml-1" />;
   };
 
   // Filter and sort the customer data
   const filteredAndSortedCustomers = useMemo(() => {
     if (!customersData || customersData.length === 0) return [];
-    
+
     let result = [...customersData];
-    
+
     // Apply search filter
     if (searchTerm) {
-      result = result.filter(customer => 
+      result = result.filter(customer =>
         customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (customer.industry && customer.industry.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (customer.company && customer.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -126,15 +105,15 @@ const Customers = () => {
         (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
-    
+
     // Apply sorting
     result.sort((a, b) => {
       const aValue = a[sortConfig.key as keyof CustomerData];
       const bValue = b[sortConfig.key as keyof CustomerData];
-      
+
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;
-      
+
       if (aValue < bValue) {
         return sortConfig.direction === 'asc' ? -1 : 1;
       }
@@ -143,7 +122,7 @@ const Customers = () => {
       }
       return 0;
     });
-    
+
     return result;
   }, [customersData, searchTerm, sortConfig]);
 
@@ -168,12 +147,12 @@ const Customers = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       <OrdersSidebar />
-      
+
       <div className="flex-1 overflow-y-auto">
         <div className="container py-6">
-          <Header 
-            title="客户分析" 
-            description="查看和分析客户数据，包括购买历史、增长趋势和状态" 
+          <Header
+            title="客户分析"
+            description="查看和分析客户数据，包括购买历史、增长趋势和状态"
           />
 
           <div className="bg-white rounded-lg shadow p-6 mt-6">
@@ -182,11 +161,11 @@ const Customers = () => {
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                 <div className="relative w-full md:w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                  <Input 
-                    placeholder="搜索客户..." 
+                  <Input
+                    placeholder="搜索客户..."
                     className="pl-8"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)} 
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
                 <Button variant="outline" size="icon" className="flex items-center gap-2">
@@ -213,7 +192,7 @@ const Customers = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer"
                         onClick={() => handleSort('name')}
                       >
@@ -222,7 +201,7 @@ const Customers = () => {
                           {renderSortIcon('name')}
                         </div>
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer"
                         onClick={() => handleSort('industry')}
                       >
@@ -232,7 +211,7 @@ const Customers = () => {
                         </div>
                       </TableHead>
                       <TableHead>联系人</TableHead>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer text-right"
                         onClick={() => handleSort('lifetime_value')}
                       >
@@ -241,7 +220,7 @@ const Customers = () => {
                           {renderSortIcon('lifetime_value')}
                         </div>
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer text-right"
                         onClick={() => handleSort('purchase_count')}
                       >
@@ -250,7 +229,7 @@ const Customers = () => {
                           {renderSortIcon('purchase_count')}
                         </div>
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer text-right"
                         onClick={() => handleSort('growth')}
                       >
@@ -259,7 +238,7 @@ const Customers = () => {
                           {renderSortIcon('growth')}
                         </div>
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer text-center"
                         onClick={() => handleSort('status')}
                       >
@@ -268,7 +247,7 @@ const Customers = () => {
                           {renderSortIcon('status')}
                         </div>
                       </TableHead>
-                      <TableHead 
+                      <TableHead
                         className="cursor-pointer"
                         onClick={() => handleSort('region')}
                       >
@@ -288,9 +267,9 @@ const Customers = () => {
                       </TableRow>
                     ) : (
                       filteredAndSortedCustomers.map((customer) => (
-                        <TableRow 
-                          key={customer.id} 
-                          className="hover:bg-gray-50 cursor-pointer" 
+                        <TableRow
+                          key={customer.id}
+                          className="hover:bg-gray-50 cursor-pointer"
                           onClick={() => handleCustomerClick(customer)}
                         >
                           <TableCell className="font-medium text-dashboard-purple">
@@ -324,7 +303,7 @@ const Customers = () => {
           </div>
         </div>
       </div>
-      
+
       <CustomerDetailModal
         open={drilldownOpen}
         onClose={() => setDrilldownOpen(false)}
@@ -341,10 +320,10 @@ interface CustomerDetailModalProps {
   customer: CustomerData | null;
 }
 
-const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({ 
-  open, 
-  onClose, 
-  customer 
+const CustomerDetailModal: React.FC<CustomerDetailModalProps> = ({
+  open,
+  onClose,
+  customer
 }) => {
   if (!customer) return null;
 

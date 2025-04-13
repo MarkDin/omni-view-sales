@@ -9,17 +9,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Table, TableBody, TableCell, TableHead, 
-  TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead,
+  TableHeader, TableRow
 } from "@/components/ui/table";
-import { 
+import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer 
+  CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { ChevronLeft, Download, Share2, TrendingUp, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-
+import { ProductData } from "@/types/product";
 // Sample data
 const regionData = [
   { name: '华东', value: 42 },
@@ -70,28 +70,17 @@ const inventoryHistory = [
 interface ProductDrilldownModalProps {
   open: boolean;
   onClose: () => void;
-  product: {
-    id: number;
-    name: string;
-    category: string;
-    price: number;
-    inventory: number;
-    sales: number;
-    growth: number;
-    profit: number;
-    margin: number;
-    customers: number;
-  };
+  product: ProductData
 }
 
-const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({ 
-  open, 
-  onClose, 
-  product 
+const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
+  open,
+  onClose,
+  product
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const COLORS = ['#8b5cf6', '#2563eb', '#f97316', '#7c3aed', '#93c5fd'];
-  
+
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
       <DialogContent className="sm:max-w-[80vw]">
@@ -103,7 +92,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
             {product.name} 产品详情
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="mb-6">
           <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full">
@@ -112,7 +101,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
               <TabsTrigger value="customers" className="flex-1">客户分析</TabsTrigger>
               <TabsTrigger value="trends" className="flex-1">趋势分析</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="overview" className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gray-50 rounded-lg p-4">
@@ -136,7 +125,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="font-medium mb-3 text-lg">销售数据</h3>
                   <div className="space-y-3">
@@ -162,7 +151,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-6">
                 <h3 className="font-medium mb-3 text-lg">月度销售趋势</h3>
                 <div className="h-64">
@@ -170,14 +159,14 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                     <BarChart data={monthlyData}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="name" />
-                      <YAxis tickFormatter={(value) => `¥${value/1000}k`} />
+                      <YAxis tickFormatter={(value) => `¥${value / 1000}k`} />
                       <Tooltip formatter={(value) => [`¥${value.toLocaleString()}`, '金额']} />
                       <Bar dataKey="value" fill="#7c3aed" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
-              
+
               <div className="mt-6">
                 <h3 className="font-medium mb-3 text-lg">区域销售占比</h3>
                 <div className="h-64">
@@ -203,7 +192,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="regions" className="mt-4">
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1">
@@ -231,7 +220,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                     </ResponsiveContainer>
                   </div>
                 </div>
-                
+
                 <div className="flex-1">
                   <h3 className="font-medium mb-3 text-lg">区域销售金额</h3>
                   <div className="h-80">
@@ -248,7 +237,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                         margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                        <XAxis type="number" tickFormatter={(value) => `¥${value/10000}万`} />
+                        <XAxis type="number" tickFormatter={(value) => `¥${value / 10000}万`} />
                         <YAxis dataKey="name" type="category" scale="band" />
                         <Tooltip formatter={(value) => [`¥${value.toLocaleString()}`, '销售额']} />
                         <Bar dataKey="value" fill="#2563eb" />
@@ -257,7 +246,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-6">
                 <h3 className="font-medium mb-3 text-lg">区域增长率比较</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -279,7 +268,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="customers" className="mt-4">
               <div className="mb-6">
                 <h3 className="font-medium mb-3 text-lg">客户购买分布</h3>
@@ -310,7 +299,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                   </ResponsiveContainer>
                 </div>
               </div>
-              
+
               <div className="mb-6">
                 <h3 className="font-medium mb-3 text-lg">客户平均采购周期</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -322,7 +311,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                       提前5天
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="text-sm text-gray-500">中型企业</h4>
                     <p className="text-xl font-bold">62天</p>
@@ -331,7 +320,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                       延后3天
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="text-sm text-gray-500">小型企业</h4>
                     <p className="text-xl font-bold">90天</p>
@@ -341,7 +330,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               <div>
                 <h3 className="font-medium mb-3 text-lg">主要客户</h3>
                 <div className="overflow-x-auto">
@@ -377,7 +366,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                 </div>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="trends" className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -387,7 +376,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                       <LineChart data={monthlyData}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} />
                         <XAxis dataKey="name" />
-                        <YAxis tickFormatter={(value) => `¥${value/1000}k`} />
+                        <YAxis tickFormatter={(value) => `¥${value / 1000}k`} />
                         <Tooltip formatter={(value) => [`¥${value.toLocaleString()}`, '销售额']} />
                         <Line
                           type="monotone"
@@ -401,7 +390,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                     </ResponsiveContainer>
                   </div>
                 </div>
-                
+
                 <div>
                   <h3 className="font-medium mb-3 text-lg">库存趋势 (过去12个月)</h3>
                   <div className="h-72">
@@ -424,7 +413,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-6">
                 <h3 className="font-medium mb-3 text-lg">季度销售对比</h3>
                 <div className="h-72">
@@ -439,7 +428,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                     >
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="name" />
-                      <YAxis tickFormatter={(value) => `¥${value/10000}万`} />
+                      <YAxis tickFormatter={(value) => `¥${value / 10000}万`} />
                       <Tooltip formatter={(value) => [`¥${value.toLocaleString()}`, '']} />
                       <Legend />
                       <Bar dataKey="current" name="本年" fill="#7c3aed" />
@@ -448,7 +437,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
                   </ResponsiveContainer>
                 </div>
               </div>
-              
+
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-medium mb-2 text-lg">产品生命周期阶段</h3>
                 <div className="relative pt-1">
@@ -472,7 +461,7 @@ const ProductDrilldownModal: React.FC<ProductDrilldownModalProps> = ({
             </TabsContent>
           </Tabs>
         </div>
-        
+
         <DialogFooter>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="flex items-center gap-1">
