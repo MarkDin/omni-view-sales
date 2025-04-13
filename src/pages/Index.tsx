@@ -12,8 +12,10 @@ import DrilldownModal from '@/components/Dashboard/DrilldownModal';
 const Index = () => {
   const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [section, setSection] = useState<string>('');
   
-  const handleDrillDown = (customerId: string) => {
+  const handleDrillDown = (sectionId: string = '', customerId: string = '') => {
+    setSection(sectionId);
     setSelectedCustomerId(customerId);
     setIsDrilldownOpen(true);
   };
@@ -26,18 +28,18 @@ const Index = () => {
         <Header title="仪表盘概览" />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <KPICards onDrillDown={handleDrillDown} />
+          <KPICards onDrillDown={(section) => handleDrillDown(section)} />
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <SalesChart onDrillDown={handleDrillDown} />
-            <PipelineAnalysis onDrillDown={handleDrillDown} />
+            <SalesChart onDrillDown={() => handleDrillDown('revenue')} />
+            <PipelineAnalysis onDrillDown={() => handleDrillDown('pipeline')} />
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <CustomerOverview onDrillDown={handleDrillDown} />
+              <CustomerOverview onDrillDown={(customerId) => handleDrillDown('customer', customerId)} />
             </div>
-            <RegionalSales onDrillDown={handleDrillDown} />
+            <RegionalSales onDrillDown={() => handleDrillDown('regional')} />
           </div>
         </main>
       </div>
@@ -45,7 +47,8 @@ const Index = () => {
       <DrilldownModal 
         open={isDrilldownOpen} 
         onClose={() => setIsDrilldownOpen(false)}
-        customerId={selectedCustomerId}
+        section={section || 'revenue'}
+        data={section === 'customer' ? { id: selectedCustomerId } : undefined}
       />
     </div>
   );

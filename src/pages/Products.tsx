@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
 import ProductDrilldownModal from '@/components/Dashboard/ProductDrilldownModal';
@@ -49,7 +48,6 @@ const Products = () => {
   });
 
   const handleProductClick = (product: ProductData) => {
-    // Ensure a valid product object with required fields before setting it
     if (product && product.name && product.category) {
       setSelectedProduct(product);
       setIsDrilldownOpen(true);
@@ -64,11 +62,10 @@ const Products = () => {
     setIsFiltering(false);
   };
 
-  // Safely get unique categories, filtering out products with no category
   const uniqueCategories = Array.from(
     new Set(
       products
-        .filter(product => product && product.category) // Make sure product and category exists
+        .filter(product => product && product.category)
         .map(product => product.category)
     )
   );
@@ -126,7 +123,6 @@ const Products = () => {
           <ProductsTable products={filteredProducts} handleProductClick={handleProductClick} />
         </div>
         
-        {/* Only render the modal when there's a valid selected product */}
         {selectedProduct && (
           <ProductDrilldownModal 
             open={isDrilldownOpen} 
