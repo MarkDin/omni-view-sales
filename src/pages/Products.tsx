@@ -38,6 +38,8 @@ const Products = () => {
   const categoryData = calculateCategoryDistribution(products);
 
   const filteredProducts = products.filter(product => {
+    if (!product.name || !product.category) return false;
+    
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                         product.category.toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -47,8 +49,13 @@ const Products = () => {
   });
 
   const handleProductClick = (product: ProductData) => {
-    setSelectedProduct(product);
-    setIsDrilldownOpen(true);
+    // Ensure a valid product object with required fields before setting it
+    if (product && product.name && product.category) {
+      setSelectedProduct(product);
+      setIsDrilldownOpen(true);
+    } else {
+      console.warn('Attempted to open drilldown with an invalid product:', product);
+    }
   };
 
   const clearFilters = () => {
@@ -57,7 +64,14 @@ const Products = () => {
     setIsFiltering(false);
   };
 
-  const uniqueCategories = Array.from(new Set(products.map(product => product.category)));
+  // Safely get unique categories, filtering out products with no category
+  const uniqueCategories = Array.from(
+    new Set(
+      products
+        .filter(product => product && product.category) // Make sure product and category exists
+        .map(product => product.category)
+    )
+  );
 
   if (isLoading) {
     return (
@@ -112,11 +126,14 @@ const Products = () => {
           <ProductsTable products={filteredProducts} handleProductClick={handleProductClick} />
         </div>
         
-        <ProductDrilldownModal 
-          open={isDrilldownOpen} 
-          onClose={() => setIsDrilldownOpen(false)}
-          product={selectedProduct}
-        />
+        {/* Only render the modal when there's a valid selected product */}
+        {selectedProduct && (
+          <ProductDrilldownModal 
+            open={isDrilldownOpen} 
+            onClose={() => setIsDrilldownOpen(false)}
+            product={selectedProduct}
+          />
+        )}
       </div>
     </div>
   );

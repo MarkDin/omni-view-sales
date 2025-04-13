@@ -4,20 +4,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal } from 'lucide-react';
-
-interface ProductData {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  inventory: number | null;
-  sales: number | null;
-  growth: number | null;
-  profit: number | null;
-  margin: number | null;
-  customers: number | null;
-  created_at: string | null;
-}
+import { ProductData } from '@/types/product';
 
 interface ProductsTableProps {
   products: ProductData[];
@@ -47,19 +34,19 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, handleProductCl
               className="cursor-pointer"
               onClick={() => handleProductClick(product)}
             >
-              <TableCell className="font-medium">{product.name}</TableCell>
+              <TableCell className="font-medium">{product.name || 'Unknown'}</TableCell>
               <TableCell>
-                <Badge variant="outline">{product.category}</Badge>
+                <Badge variant="outline">{product.category || 'Uncategorized'}</Badge>
               </TableCell>
               <TableCell className="text-right">¥{product.price}</TableCell>
-              <TableCell className="text-right">{product.inventory || 0}</TableCell>
-              <TableCell className="text-right">¥{product.sales?.toLocaleString() || 0}</TableCell>
+              <TableCell className="text-right">{product.inventory ?? 0}</TableCell>
+              <TableCell className="text-right">¥{product.sales?.toLocaleString() ?? 0}</TableCell>
               <TableCell className="text-right">
                 <span className={product.growth && product.growth > 0 ? 'text-green-500' : 'text-red-500'}>
                   {product.growth ? `${product.growth}%` : '0%'}
                 </span>
               </TableCell>
-              <TableCell className="text-right">{product.margin || 0}%</TableCell>
+              <TableCell className="text-right">{product.margin ?? 0}%</TableCell>
               <TableCell>
                 <Button variant="ghost" size="icon" onClick={(e) => {
                   e.stopPropagation();
