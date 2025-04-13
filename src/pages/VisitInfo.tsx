@@ -11,8 +11,15 @@ interface VisitRecord {
   id: string;
   user_email: string | null;
   visit_start_time: string;
-  device_info: string;
+  device_info: {
+    userAgent: string;
+    platform: string;
+    language: string;
+    screenWidth: number;
+    screenHeight: number;
+  };
   market: string | null;
+  path: string;
   created_at: string;
 }
 
@@ -23,65 +30,8 @@ const VisitInfo = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // 记录当前访问
-    recordVisit();
-    
-    // 获取所有访问记录
     fetchVisitRecords();
-
-    // 添加Google Analytics跟踪代码
-    if (typeof window !== 'undefined' && !window.gtag) {
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-MEASUREMENT_ID'; // 替换为你的GA ID
-      document.head.appendChild(script);
-
-      script.onload = () => {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(...args: any[]){window.dataLayer.push(arguments);}
-        window.gtag = gtag;
-        gtag('js', new Date());
-        gtag('config', 'G-MEASUREMENT_ID'); // 替换为你的GA ID
-      };
-    }
   }, []);
-
-  const recordVisit = async () => {
-    try {
-      // 获取设备信息
-      const deviceInfo = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        screenWidth: window.screen.width,
-        screenHeight: window.screen.height
-      };
-      
-      // 尝试获取用户位置
-      let market = "未知";
-      try {
-        const response = await fetch('https://ipapi.co/json/');
-        if (response.ok) {
-          const locationData = await response.json();
-          market = `${locationData.city}, ${locationData.country_name}`;
-        }
-      } catch (error) {
-        console.error('Error fetching location:', error);
-      }
-
-      // 插入访问记录
-      const { error } = await supabase.from('visit_records').insert({
-        user_email: user?.email || null,
-        visit_start_time: new Date().toISOString(),
-        device_info: JSON.stringify(deviceInfo),
-        market: market
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      console.error('Error recording visit:', error.message);
-    }
-  };
 
   const fetchVisitRecords = async () => {
     try {
@@ -93,7 +43,7 @@ const VisitInfo = () => {
 
       if (error) throw error;
 
-      setVisitRecords(data || []);
+      setVisitRecords(data as VisitRecord[]);
     } catch (error: any) {
       toast({
         title: "获取记录失败",
@@ -109,13 +59,32 @@ const VisitInfo = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  const formatDeviceInfo = (deviceInfoString: string) => {
-    try {
-      const deviceInfo = JSON.parse(deviceInfoString);
-      return `${deviceInfo.platform} - ${deviceInfo.screenWidth}x${deviceInfo.screenHeight}`;
-    } catch {
-      return deviceInfoString;
+  const formatDeviceInfo = (deviceInfo: any) => {
+    if (!deviceInfo) return '未知设备';
+    
+    if (typeof deviceInfo === 'string') {
+      try {
+        deviceInfo = JSON.parse(deviceInfo);
+      } catch {
+        return deviceInfo;
+      }
     }
+    
+    return `${deviceInfo.platform || '未知平台'} - ${deviceInfo.screenWidth || '?'}x${deviceInfo.screenHeight || '?'}`;
+  };
+
+  const getPageName = (path: string) => {
+    const pathMap: Record<string, string> = {
+      '/': '仪表盘',
+      '/customers': '客户分析',
+      '/products': '产品销售',
+      '/orders': '订单管理',
+      '/excel-upload': 'Excel上传',
+      '/visit-info': '访问记录',
+      '/auth': '登录页面'
+    };
+    
+    return pathMap[path] || path;
   };
 
   return (
@@ -137,6 +106,7 @@ const VisitInfo = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>访问时间</TableHead>
+                    <TableHead>访问页面</TableHead>
                     <TableHead>用户邮箱</TableHead>
                     <TableHead>设备信息</TableHead>
                     <TableHead>访问地区</TableHead>
@@ -147,6 +117,7 @@ const VisitInfo = () => {
                     visitRecords.map((record) => (
                       <TableRow key={record.id}>
                         <TableCell>{formatDate(record.visit_start_time)}</TableCell>
+                        <TableCell>{getPageName(record.path)}</TableCell>
                         <TableCell>{record.user_email || '未登录用户'}</TableCell>
                         <TableCell>{formatDeviceInfo(record.device_info)}</TableCell>
                         <TableCell>{record.market || '未知'}</TableCell>
@@ -154,7 +125,7 @@ const VisitInfo = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center">暂无访问记录</TableCell>
+                      <TableCell colSpan={5} className="text-center">暂无访问记录</TableCell>
                     </TableRow>
                   )}
                 </TableBody>

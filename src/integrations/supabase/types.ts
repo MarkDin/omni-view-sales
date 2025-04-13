@@ -179,6 +179,36 @@ export type Database = {
         }
         Relationships: []
       }
+      visit_records: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          market: string | null
+          path: string
+          user_email: string | null
+          visit_start_time: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          market?: string | null
+          path: string
+          user_email?: string | null
+          visit_start_time?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          market?: string | null
+          path?: string
+          user_email?: string | null
+          visit_start_time?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
