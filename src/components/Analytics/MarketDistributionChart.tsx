@@ -11,8 +11,8 @@ interface MarketDistributionProps {
 }
 
 export const MarketDistributionChart: React.FC<MarketDistributionProps> = ({ data }) => {
-  // Limit to top 10 markets for better visualization
-  const topMarkets = data.slice(0, 10);
+  // 确保数据存在且是数组
+  const topMarkets = Array.isArray(data) ? data.slice(0, 10) : [];
   
   return (
     <Card className="w-full">

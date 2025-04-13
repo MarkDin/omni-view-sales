@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 interface VisitRecord {
   id: string;
@@ -14,7 +15,7 @@ interface VisitRecord {
     language: string;
     screenWidth: number;
     screenHeight: number;
-  };
+  } | Json;  // 添加 Json 类型以兼容后端返回
   market: string | null;
   path: string;
   created_at: string | null;
@@ -45,9 +46,13 @@ interface VisitMetricsResponse {
   avg_duration: number | null;
 }
 
-interface DistributionResponse {
-  platform?: string;
-  market?: string;
+interface DeviceDistributionResponse {
+  platform: string;
+  count: number;
+}
+
+interface MarketDistributionResponse {
+  market: string;
   count: number;
 }
 
@@ -75,41 +80,49 @@ export const useVisitAnalytics = () => {
 
       if (recordsError) throw recordsError;
       
-      // 获取独立访客数和总访问量
+      // 获取独立访客数和总访问量 - 修复泛型参数
       const { data: visitorsCountData, error: visitorsCountError } = await supabase
-        .rpc<VisitMetricsResponse>('get_visit_metrics');
+        .rpc('get_visit_metrics');
         
       if (visitorsCountError) throw visitorsCountError;
       
-      // 获取设备分布数据
+      // 获取设备分布数据 - 修复泛型参数
       const { data: deviceData, error: deviceError } = await supabase
-        .rpc<DistributionResponse[]>('get_device_distribution');
+        .rpc('get_device_distribution');
         
       if (deviceError) throw deviceError;
       
-      // 获取地区分布数据 (每人每天只计一次)
+      // 获取地区分布数据 (每人每天只计一次) - 修复泛型参数
       const { data: marketData, error: marketError } = await supabase
-        .rpc<DistributionResponse[]>('get_market_distribution_unique_daily');
+        .rpc('get_market_distribution_unique_daily');
         
       if (marketError) throw marketError;
       
-      // 转换数据格式
-      const deviceDistribution: DeviceDistribution[] = deviceData?.map((item) => ({
+      // 转换数据格式 - 增加安全检查
+      const deviceDistribution: DeviceDistribution[] = deviceData ? deviceData.map((item) => ({
         name: item.platform || '未知平台',
         value: Number(item.count)
-      })).sort((a, b) => b.value - a.value) || [];
+      })).sort((a, b) => b.value - a.value) : [];
       
-      const marketDistribution: MarketDistribution[] = marketData?.map((item) => ({
+      const marketDistribution: MarketDistribution[] = marketData ? marketData.map((item) => ({
         name: item.market || '未知地区',
         value: Number(item.count)
-      })).sort((a, b) => b.value - a.value) || [];
+      })).sort((a, b) => b.value - a.value) : [];
       
-      // 更新状态
-      setVisitRecords(recordsData || []);
+      // 更新状态 - 类型转换以匹配预期类型
+      const typedRecords = recordsData ? recordsData.map((record: any) => ({
+        ...record,
+        // 确保 device_info 字段符合 VisitRecord 接口要求
+        device_info: record.device_info
+      })) : [];
+      
+      setVisitRecords(typedRecords as VisitRecord[]);
+      
+      // 安全地访问返回的数据
       setMetrics({
-        totalVisits: visitorsCountData?.[0]?.total_visits || 0,
-        uniqueVisitors: visitorsCountData?.[0]?.unique_visitors || 0,
-        averageDuration: visitorsCountData?.[0]?.avg_duration || null,
+        totalVisits: visitorsCountData && visitorsCountData[0] ? visitorsCountData[0].total_visits : 0,
+        uniqueVisitors: visitorsCountData && visitorsCountData[0] ? visitorsCountData[0].unique_visitors : 0,
+        averageDuration: visitorsCountData && visitorsCountData[0] ? visitorsCountData[0].avg_duration : null,
         deviceDistribution,
         marketDistribution
       });

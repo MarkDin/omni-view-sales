@@ -13,6 +13,9 @@ interface DeviceDistributionProps {
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088fe', '#00C49F'];
 
 export const DeviceDistributionChart: React.FC<DeviceDistributionProps> = ({ data }) => {
+  // 确保数据存在且是数组
+  const chartData = Array.isArray(data) ? data : [];
+  
   return (
     <Card className="w-full">
       <CardHeader>
@@ -22,7 +25,7 @@ export const DeviceDistributionChart: React.FC<DeviceDistributionProps> = ({ dat
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="50%"
               cy="50%"
               labelLine={true}
@@ -31,7 +34,7 @@ export const DeviceDistributionChart: React.FC<DeviceDistributionProps> = ({ dat
               dataKey="value"
               label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
             >
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
