@@ -10,10 +10,12 @@ import {
   ShoppingBag, 
   Menu, 
   X, 
-  FileSpreadsheet 
+  FileSpreadsheet,
+  LogOut
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavLinkProps {
   to: string;
@@ -50,6 +52,7 @@ const OrdersSidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const { signOut, user } = useAuth();
   
   const navLinks = [
     { path: "/", label: "仪表盘", icon: <Home size={18} /> },
@@ -95,6 +98,12 @@ const OrdersSidebar = () => {
                 </Link>
               </div>
               {renderNavLinks(() => setIsOpen(false))}
+              <div className="mt-4">
+                <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
+                  <LogOut className="mr-2" size={18} />
+                  退出登录
+                </Button>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
@@ -115,12 +124,18 @@ const OrdersSidebar = () => {
       </div>
       
       <div className="p-4 border-t">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gray-300"></div>
-          <div>
-            <p className="font-medium">管理员</p>
-            <p className="text-sm text-gray-500">admin@example.com</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+              {user?.email?.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-medium truncate max-w-[120px]">{user?.email}</p>
+            </div>
           </div>
+          <Button variant="ghost" size="icon" onClick={signOut}>
+            <LogOut size={18} />
+          </Button>
         </div>
       </div>
     </div>

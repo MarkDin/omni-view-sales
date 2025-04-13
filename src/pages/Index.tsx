@@ -29,15 +29,15 @@ const Index = () => {
           <KPICards onDrillDown={handleDrillDown} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <SalesChart onDrillDown={() => handleDrillDown(selectedCustomerId)} />
-            <PipelineAnalysis onDrillDown={() => handleDrillDown(selectedCustomerId)} />
+            <SalesChart onDrillDown={() => handleDrillDown('revenue')} />
+            <PipelineAnalysis onDrillDown={() => handleDrillDown('pipeline')} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <CustomerOverview onDrillDown={handleDrillDown} />
+              <CustomerOverview onDrillDown={(customerId) => handleDrillDown('customer', customerId)} />
             </div>
-            <RegionalSales onDrillDown={() => handleDrillDown(selectedCustomerId)} />
+            <RegionalSales onDrillDown={() => handleDrillDown('regional')} />
           </div>
         </main>
       </div>
@@ -45,7 +45,8 @@ const Index = () => {
       <DrilldownModal
         open={isDrilldownOpen}
         onClose={() => setIsDrilldownOpen(false)}
-        section={selectedCustomerId}
+        section={section || 'revenue'}
+        data={section === 'customer' ? { id: selectedCustomerId } : undefined}
       />
     </div>
   );
