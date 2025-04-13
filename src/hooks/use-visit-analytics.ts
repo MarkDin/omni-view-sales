@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,20 +40,66 @@ interface VisitMetrics {
 
 export const useVisitAnalytics = () => {
   const [visitRecords, setVisitRecords] = useState<VisitRecord[]>([]);
+  const [metrics, setMetrics] = useState<VisitMetrics>({
+    totalVisits: 0,
+    uniqueVisitors: 0,
+    averageDuration: null,
+    deviceDistribution: [],
+    marketDistribution: []
+  });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   const fetchVisitRecords = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // 获取基础访问记录
+      const { data: recordsData, error: recordsError } = await supabase
         .from('visit_records')
         .select('*')
         .order('visit_start_time', { ascending: false });
 
-      if (error) throw error;
-
-      setVisitRecords(data as VisitRecord[]);
+      if (recordsError) throw recordsError;
+      
+      // 获取独立访客数和总访问量
+      const { data: visitorsCountData, error: visitorsCountError } = await supabase
+        .rpc('get_visit_metrics');
+        
+      if (visitorsCountError) throw visitorsCountError;
+      
+      // 获取设备分布数据
+      const { data: deviceData, error: deviceError } = await supabase
+        .rpc('get_device_distribution');
+        
+      if (deviceError) throw deviceError;
+      
+      // 获取地区分布数据 (每人每天只计一次)
+      const { data: marketData, error: marketError } = await supabase
+        .rpc('get_market_distribution_unique_daily');
+        
+      if (marketError) throw marketError;
+      
+      // 转换数据格式
+      const deviceDistribution: DeviceDistribution[] = deviceData.map((item: any) => ({
+        name: item.platform || '未知平台',
+        value: Number(item.count)
+      })).sort((a: DeviceDistribution, b: DeviceDistribution) => b.value - a.value);
+      
+      const marketDistribution: MarketDistribution[] = marketData.map((item: any) => ({
+        name: item.market || '未知地区',
+        value: Number(item.count)
+      })).sort((a: MarketDistribution, b: MarketDistribution) => b.value - a.value);
+      
+      // 更新状态
+      setVisitRecords(recordsData as VisitRecord[]);
+      setMetrics({
+        totalVisits: visitorsCountData.total_visits || 0,
+        uniqueVisitors: visitorsCountData.unique_visitors || 0,
+        averageDuration: visitorsCountData.avg_duration,
+        deviceDistribution,
+        marketDistribution
+      });
     } catch (error: any) {
       toast({
         title: "获取记录失败",
@@ -65,94 +111,9 @@ export const useVisitAnalytics = () => {
     }
   };
 
-  const metrics = useMemo<VisitMetrics>(() => {
-    // Calculate total visits
-    const totalVisits = visitRecords.length;
-
-    // Calculate unique visitors (by email or device fingerprint)
-    const uniqueEmails = new Set(visitRecords
-      .filter(record => record.user_email)
-      .map(record => record.user_email));
-      
-    const uniqueDevices = new Set(visitRecords
-      .filter(record => !record.user_email && record.device_info)
-      .map(record => JSON.stringify(record.device_info)));
-      
-    const uniqueVisitors = uniqueEmails.size + uniqueDevices.size;
-
-    // Calculate average duration
-    const recordsWithDuration = visitRecords.filter(
-      record => record.visit_start_time && record.visit_end_time
-    );
-    
-    let totalDuration = 0;
-    recordsWithDuration.forEach(record => {
-      const startTime = new Date(record.visit_start_time).getTime();
-      const endTime = new Date(record.visit_end_time!).getTime();
-      totalDuration += (endTime - startTime) / 1000; // in seconds
-    });
-    
-    const averageDuration = recordsWithDuration.length > 0 
-      ? totalDuration / recordsWithDuration.length 
-      : null;
-
-    // Calculate device distribution
-    const deviceCounts: Record<string, number> = {};
-    visitRecords.forEach(record => {
-      if (record.device_info) {
-        let platform;
-        if (typeof record.device_info === 'string') {
-          try {
-            const parsed = JSON.parse(record.device_info);
-            platform = parsed.platform || '未知平台';
-          } catch {
-            platform = '未知平台';
-          }
-        } else {
-          platform = record.device_info.platform || '未知平台';
-        }
-        
-        deviceCounts[platform] = (deviceCounts[platform] || 0) + 1;
-      }
-    });
-    
-    const deviceDistribution: DeviceDistribution[] = Object.entries(deviceCounts)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-
-    // Calculate market distribution - 同一个人一天只记录一次
-    const marketVisitors = new Map<string, Set<string>>();
-    
-    visitRecords.forEach(record => {
-      const market = record.market || '未知地区';
-      const visitorId = record.user_email || JSON.stringify(record.device_info) || record.id;
-      const visitDate = new Date(record.visit_start_time).toLocaleDateString();
-      const visitorKey = `${visitorId}-${visitDate}`;
-      
-      if (!marketVisitors.has(market)) {
-        marketVisitors.set(market, new Set());
-      }
-      
-      marketVisitors.get(market)!.add(visitorKey);
-    });
-    
-    const marketCounts: Record<string, number> = {};
-    marketVisitors.forEach((visitors, market) => {
-      marketCounts[market] = visitors.size;
-    });
-    
-    const marketDistribution: MarketDistribution[] = Object.entries(marketCounts)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-
-    return {
-      totalVisits,
-      uniqueVisitors,
-      averageDuration,
-      deviceDistribution,
-      marketDistribution
-    };
-  }, [visitRecords]);
+  useEffect(() => {
+    fetchVisitRecords();
+  }, []);
 
   return {
     visitRecords,
