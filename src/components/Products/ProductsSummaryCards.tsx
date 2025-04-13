@@ -1,52 +1,42 @@
 
 import React from 'react';
-import { Package } from 'lucide-react';
-
-interface Summary {
-  totalRevenue: number;
-  totalProducts: number;
-  totalProfit: number;
-  avgMargin: number;
-}
+import { Package, ShoppingCart, TrendingUp, DollarSign } from 'lucide-react';
+import { ProductData } from '@/types/product';
+import { calculateSummary } from '@/components/Products/ProductUtils';
+import { MetricCard } from '@/components/Analytics/MetricCard';
 
 interface ProductsSummaryCardsProps {
-  summary: Summary;
+  products: ProductData[];
 }
 
-const ProductsSummaryCards: React.FC<ProductsSummaryCardsProps> = ({ summary }) => {
+const ProductsSummaryCards: React.FC<ProductsSummaryCardsProps> = ({ products }) => {
+  const summary = calculateSummary(products);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-500">总销售额</h3>
-          <Package className="text-purple-500" size={24} />
-        </div>
-        <p className="text-3xl font-bold mt-2">¥{summary.totalRevenue.toLocaleString()}</p>
-      </div>
+      <MetricCard
+        title="总销售额"
+        value={`¥${summary.totalRevenue.toLocaleString()}`}
+        icon={<DollarSign className="text-purple-500" />}
+      />
       
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-500">产品总数</h3>
-          <Package className="text-blue-500" size={24} />
-        </div>
-        <p className="text-3xl font-bold mt-2">{summary.totalProducts}</p>
-      </div>
+      <MetricCard
+        title="产品总数"
+        value={summary.totalProducts}
+        icon={<Package className="text-blue-500" />}
+      />
       
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-500">总利润</h3>
-          <Package className="text-green-500" size={24} />
-        </div>
-        <p className="text-3xl font-bold mt-2">¥{summary.totalProfit.toLocaleString()}</p>
-      </div>
+      <MetricCard
+        title="总利润"
+        value={`¥${summary.totalProfit.toLocaleString()}`}
+        icon={<ShoppingCart className="text-green-500" />}
+      />
       
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-500">平均利润率</h3>
-          <Package className="text-orange-500" size={24} />
-        </div>
-        <p className="text-3xl font-bold mt-2">{summary.avgMargin}%</p>
-      </div>
+      <MetricCard
+        title="平均利润率"
+        value={`${summary.avgMargin}%`}
+        icon={<TrendingUp className="text-orange-500" />}
+      />
     </div>
   );
 };

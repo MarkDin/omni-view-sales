@@ -32,8 +32,8 @@ const ProductSearchFilters: React.FC<ProductSearchFiltersProps> = ({
   clearFilters
 }) => {
   return (
-    <>
-      <div className="flex flex-col sm:flex-row w-full md:w-auto gap-4">
+    <div className="mb-6">
+      <div className="flex flex-col sm:flex-row w-full md:w-auto gap-4 mb-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
           <Input
@@ -102,7 +102,7 @@ const ProductSearchFilters: React.FC<ProductSearchFiltersProps> = ({
           </Badge>
         </div>
       )}
-    </>
+    </div>
   );
 };
 
