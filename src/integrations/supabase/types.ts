@@ -9,6 +9,24 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      customer_extra: {
+        Row: {
+          created_at: string
+          id: number
+          trend_chart: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          trend_chart?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          trend_chart?: string | null
+        }
+        Relationships: []
+      }
       customer_orders: {
         Row: {
           country: string | null
@@ -187,6 +205,7 @@ export type Database = {
           market: string | null
           path: string
           user_email: string | null
+          visit_end_time: string | null
           visit_start_time: string | null
         }
         Insert: {
@@ -196,6 +215,7 @@ export type Database = {
           market?: string | null
           path: string
           user_email?: string | null
+          visit_end_time?: string | null
           visit_start_time?: string | null
         }
         Update: {
@@ -205,6 +225,7 @@ export type Database = {
           market?: string | null
           path?: string
           user_email?: string | null
+          visit_end_time?: string | null
           visit_start_time?: string | null
         }
         Relationships: []

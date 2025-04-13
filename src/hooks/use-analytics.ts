@@ -12,8 +12,10 @@ export const useAnalytics = () => {
   const location = useLocation();
   const { user } = useAuth();
   
-  // 追踪页面浏览并记录访问
   useEffect(() => {
+    let visitRecordId: string | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+
     // 1. Google Analytics 追踪
     if (typeof window.gtag !== 'undefined') {
       window.gtag('config', 'G-MEASUREMENT_ID', {
@@ -46,26 +48,68 @@ export const useAnalytics = () => {
         }
 
         // 插入访问记录
-        const { error } = await supabase.from('visit_records').insert({
+        const { data, error } = await supabase.from('visit_records').insert({
           user_email: user?.email || null,
           visit_start_time: new Date().toISOString(),
           device_info: deviceInfo,
           market: market,
           path: location.pathname
-        });
+        }).select();
 
         if (error) throw error;
+        
+        // 存储访问记录ID
+        if (data && data.length > 0) {
+          visitRecordId = data[0].id;
+        }
       } catch (error: any) {
         console.error('Error recording visit:', error.message);
       }
     };
     
+    // 更新访问记录的结束时间
+    const updateVisitEndTime = async () => {
+      if (visitRecordId) {
+        try {
+          await supabase
+            .from('visit_records')
+            .update({ 
+              visit_end_time: new Date().toISOString() 
+            })
+            .eq('id', visitRecordId);
+        } catch (error: any) {
+          console.error('Error updating visit end time:', error.message);
+        }
+      }
+    };
+
     // 执行记录操作
     recordVisit();
     
-    // 当用户离开页面时可以执行清理操作
+    // 设置页面离开事件监听
+    const handlePageLeave = () => {
+      // 5秒后更新访问结束时间
+      timeoutId = setTimeout(updateVisitEndTime, 5000);
+    };
+
+    // 取消监听器的函数
+    const cleanup = () => {
+      // 清除延迟更新的定时器
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      
+      // 立即更新访问结束时间
+      updateVisitEndTime();
+    };
+
+    // 添加页面离开事件监听
+    window.addEventListener('beforeunload', handlePageLeave);
+    
+    // 返回清理函数
     return () => {
-      // 如有必要可以在这里添加页面离开时的逻辑
+      window.removeEventListener('beforeunload', handlePageLeave);
+      cleanup();
     };
   }, [location, user]); // 依赖于location和user，当它们变化时重新记录
 
