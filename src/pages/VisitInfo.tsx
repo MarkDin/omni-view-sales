@@ -1,59 +1,21 @@
 
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useEffect } from 'react';
+import { useVisitAnalytics } from '@/hooks/use-visit-analytics';
 import Header from '@/components/Dashboard/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
-
-interface VisitRecord {
-  id: string;
-  user_email: string | null;
-  visit_start_time: string;
-  device_info: {
-    userAgent: string;
-    platform: string;
-    language: string;
-    screenWidth: number;
-    screenHeight: number;
-  };
-  market: string | null;
-  path: string;
-  created_at: string;
-}
+import { DeviceDistributionChart } from '@/components/Analytics/DeviceDistributionChart';
+import { MarketDistributionChart } from '@/components/Analytics/MarketDistributionChart';
+import { MetricCard } from '@/components/Analytics/MetricCard';
+import { Users, Clock, MousePointer, LayoutGrid } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const VisitInfo = () => {
-  const [visitRecords, setVisitRecords] = useState<VisitRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const { visitRecords, loading, metrics, fetchVisitRecords } = useVisitAnalytics();
 
   useEffect(() => {
     fetchVisitRecords();
   }, []);
-
-  const fetchVisitRecords = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('visit_records')
-        .select('*')
-        .order('visit_start_time', { ascending: false });
-
-      if (error) throw error;
-
-      setVisitRecords(data as VisitRecord[]);
-    } catch (error: any) {
-      toast({
-        title: "获取记录失败",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
@@ -87,49 +49,119 @@ const VisitInfo = () => {
     return pathMap[path] || path;
   };
 
+  const formatDuration = (seconds: number | null) => {
+    if (seconds === null) return '暂无数据';
+    
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    
+    if (minutes > 0) {
+      return `${minutes}分 ${remainingSeconds}秒`;
+    }
+    return `${remainingSeconds}秒`;
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <Header title="访问记录" />
+      <Header title="访问数据分析" description="查看网站访问数据和用户行为" />
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-6">
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+        {/* 指标卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard 
+            title="总访问量" 
+            value={metrics.totalVisits}
+            icon={<MousePointer size={20} />} 
+          />
+          <MetricCard 
+            title="独立访客" 
+            value={metrics.uniqueVisitors}
+            icon={<Users size={20} />} 
+          />
+          <MetricCard 
+            title="平均访问时长" 
+            value={formatDuration(metrics.averageDuration)}
+            icon={<Clock size={20} />} 
+          />
+          <MetricCard 
+            title="访问页面数" 
+            value={new Set(visitRecords.map(r => r.path)).size}
+            icon={<LayoutGrid size={20} />} 
+          />
+        </div>
+
+        {/* 图表区域 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {loading ? (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>设备分布</CardTitle>
+                </CardHeader>
+                <CardContent className="h-80">
+                  <Skeleton className="w-full h-full" />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>地区分布</CardTitle>
+                </CardHeader>
+                <CardContent className="h-80">
+                  <Skeleton className="w-full h-full" />
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              <DeviceDistributionChart data={metrics.deviceDistribution} />
+              <MarketDistributionChart data={metrics.marketDistribution} />
+            </>
+          )}
+        </div>
+
+        {/* 访问记录表格 */}
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>网站访问记录</CardTitle>
+            <CardTitle>详细访问记录</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center p-6">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-dashboard-purple"></div>
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>访问时间</TableHead>
-                    <TableHead>访问页面</TableHead>
-                    <TableHead>用户邮箱</TableHead>
-                    <TableHead>设备信息</TableHead>
-                    <TableHead>访问地区</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visitRecords.length > 0 ? (
-                    visitRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{formatDate(record.visit_start_time)}</TableCell>
-                        <TableCell>{getPageName(record.path)}</TableCell>
-                        <TableCell>{record.user_email || '未登录用户'}</TableCell>
-                        <TableCell>{formatDeviceInfo(record.device_info)}</TableCell>
-                        <TableCell>{record.market || '未知'}</TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">暂无访问记录</TableCell>
+                      <TableHead>访问时间</TableHead>
+                      <TableHead>访问页面</TableHead>
+                      <TableHead>用户邮箱</TableHead>
+                      <TableHead>设备信息</TableHead>
+                      <TableHead>访问地区</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {visitRecords.length > 0 ? (
+                      visitRecords.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell>{formatDate(record.visit_start_time)}</TableCell>
+                          <TableCell>{getPageName(record.path)}</TableCell>
+                          <TableCell>{record.user_email || '未登录用户'}</TableCell>
+                          <TableCell>{formatDeviceInfo(record.device_info)}</TableCell>
+                          <TableCell>{record.market || '未知'}</TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center">暂无访问记录</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
