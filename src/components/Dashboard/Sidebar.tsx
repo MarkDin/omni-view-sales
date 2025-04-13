@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, BarChart3, Users, ShoppingCart, 
   Target, Settings, ChevronLeft, ChevronRight,
-  PieChart, MapPin, Calendar, HelpCircle, Package
+  PieChart, MapPin, Calendar, HelpCircle, Package, Activity
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -61,7 +61,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage }) => {
     { icon: Target, label: '销售漏斗', id: 'pipeline' },
     { icon: MapPin, label: '区域分析', id: 'regions' },
     { icon: PieChart, label: '销售渠道', id: 'channels' },
-    { icon: Calendar, label: '时间趋势', id: 'trends' }
+    { icon: Calendar, label: '时间趋势', id: 'trends' },
+    { icon: Activity, label: '访问记录', id: 'visit-info', to: '/visit-info' }
   ];
 
   const bottomItems = [

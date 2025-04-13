@@ -13,6 +13,7 @@ import Orders from "./pages/Orders";
 import ExcelUpload from "./pages/ExcelUpload";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import VisitInfo from "./pages/VisitInfo";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,11 @@ const App = () => (
             <Route path="/excel-upload" element={
               <ProtectedRoute>
                 <ExcelUpload />
+              </ProtectedRoute>
+            } />
+            <Route path="/visit-info" element={
+              <ProtectedRoute>
+                <VisitInfo />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
