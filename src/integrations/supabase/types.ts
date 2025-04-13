@@ -9,6 +9,24 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      customer_extra: {
+        Row: {
+          created_at: string
+          id: number
+          trend_chart: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          trend_chart?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          trend_chart?: string | null
+        }
+        Relationships: []
+      }
       customer_orders: {
         Row: {
           country: string | null
@@ -55,44 +73,56 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
-          company: string | null
+          company: string
           created_at: string | null
+          customer_code: string | null
           email: string | null
           id: string
           industry: string | null
-          last_purchase: string | null
+          last_order: string | null
           lifetime_value: number | null
           name: string
-          phone: string | null
+          phone: string
           purchase_count: number | null
+          score: number | null
+          short_name: string | null
+          status: number | null
         }
         Insert: {
           address?: string | null
           city?: string | null
-          company?: string | null
+          company?: string
           created_at?: string | null
+          customer_code?: string | null
           email?: string | null
           id?: string
           industry?: string | null
-          last_purchase?: string | null
+          last_order?: string | null
           lifetime_value?: number | null
-          name: string
-          phone?: string | null
+          name?: string
+          phone: string
           purchase_count?: number | null
+          score?: number | null
+          short_name?: string | null
+          status?: number | null
         }
         Update: {
           address?: string | null
           city?: string | null
-          company?: string | null
+          company?: string
           created_at?: string | null
+          customer_code?: string | null
           email?: string | null
           id?: string
           industry?: string | null
-          last_purchase?: string | null
+          last_order?: string | null
           lifetime_value?: number | null
           name?: string
-          phone?: string | null
+          phone?: string
           purchase_count?: number | null
+          score?: number | null
+          short_name?: string | null
+          status?: number | null
         }
         Relationships: []
       }
@@ -179,12 +209,107 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_statistics: {
+        Row: {
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          period_type: string
+          total_amount: number
+          total_orders: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          period_type: string
+          total_amount?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          total_amount?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      visit_records: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          market: string | null
+          path: string
+          user_email: string | null
+          visit_end_time: string | null
+          visit_start_time: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          market?: string | null
+          path: string
+          user_email?: string | null
+          visit_end_time?: string | null
+          visit_start_time?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          market?: string | null
+          path?: string
+          user_email?: string | null
+          visit_end_time?: string | null
+          visit_start_time?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_device_distribution: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          platform: string
+          count: number
+        }[]
+      }
+      get_market_distribution_unique_daily: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          market: string
+          count: number
+        }[]
+      }
+      get_period_dates: {
+        Args: { order_date: string }
+        Returns: {
+          period_type: string
+          period_start: string
+          period_end: string
+        }[]
+      }
+      get_visit_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_visits: number
+          unique_visitors: number
+          avg_duration: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
