@@ -1,7 +1,32 @@
-import React from 'react';
+
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  TrendingUp, 
+  TrendingDown,
+  ArrowUp, 
+  ArrowDown 
+} from 'lucide-react';
+import { 
+  Table, 
+  TableHeader, 
+  TableRow, 
+  TableHead, 
+  TableBody, 
+  TableCell 
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import Header from '@/components/Dashboard/Header';
+import DrilldownModal from '@/components/Dashboard/DrilldownModal';
 
 // Define customer data type
 interface CustomerData {
