@@ -120,11 +120,25 @@ export const useVisitAnalytics = () => {
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
 
-    // Calculate market distribution
-    const marketCounts: Record<string, number> = {};
+    // Calculate market distribution - 同一个人一天只记录一次
+    const marketVisitors = new Map<string, Set<string>>();
+    
     visitRecords.forEach(record => {
       const market = record.market || '未知地区';
-      marketCounts[market] = (marketCounts[market] || 0) + 1;
+      const visitorId = record.user_email || JSON.stringify(record.device_info) || record.id;
+      const visitDate = new Date(record.visit_start_time).toLocaleDateString();
+      const visitorKey = `${visitorId}-${visitDate}`;
+      
+      if (!marketVisitors.has(market)) {
+        marketVisitors.set(market, new Set());
+      }
+      
+      marketVisitors.get(market)!.add(visitorKey);
+    });
+    
+    const marketCounts: Record<string, number> = {};
+    marketVisitors.forEach((visitors, market) => {
+      marketCounts[market] = visitors.size;
     });
     
     const marketDistribution: MarketDistribution[] = Object.entries(marketCounts)

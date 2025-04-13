@@ -17,7 +17,7 @@ export const MarketDistributionChart: React.FC<MarketDistributionProps> = ({ dat
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>地区分布</CardTitle>
+        <CardTitle>地区分布（每人每天只记录一次）</CardTitle>
       </CardHeader>
       <CardContent className="h-80">
         <ResponsiveContainer width="100%" height="100%">
@@ -34,10 +34,10 @@ export const MarketDistributionChart: React.FC<MarketDistributionProps> = ({ dat
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip 
-              formatter={(value: number) => [`${value} 访问次数`, '访问量']}
+              formatter={(value: number) => [`${value} 独立访客数`, '访客数']}
               labelFormatter={(name) => `地区: ${name}`}
             />
-            <Bar dataKey="value" fill="#8884d8" name="访问次数" />
+            <Bar dataKey="value" fill="#8884d8" name="独立访客数" />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
