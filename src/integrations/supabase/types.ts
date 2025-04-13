@@ -235,7 +235,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_device_distribution: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          platform: string
+          count: number
+        }[]
+      }
+      get_market_distribution_unique_daily: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          market: string
+          count: number
+        }[]
+      }
+      get_visit_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_visits: number
+          unique_visitors: number
+          avg_duration: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -38,6 +38,19 @@ interface VisitMetrics {
   marketDistribution: MarketDistribution[];
 }
 
+// 定义后端返回的RPC函数返回类型
+interface VisitMetricsResponse {
+  total_visits: number;
+  unique_visitors: number;
+  avg_duration: number | null;
+}
+
+interface DistributionResponse {
+  platform?: string;
+  market?: string;
+  count: number;
+}
+
 export const useVisitAnalytics = () => {
   const [visitRecords, setVisitRecords] = useState<VisitRecord[]>([]);
   const [metrics, setMetrics] = useState<VisitMetrics>({
@@ -64,39 +77,39 @@ export const useVisitAnalytics = () => {
       
       // 获取独立访客数和总访问量
       const { data: visitorsCountData, error: visitorsCountError } = await supabase
-        .rpc('get_visit_metrics');
+        .rpc<VisitMetricsResponse>('get_visit_metrics');
         
       if (visitorsCountError) throw visitorsCountError;
       
       // 获取设备分布数据
       const { data: deviceData, error: deviceError } = await supabase
-        .rpc('get_device_distribution');
+        .rpc<DistributionResponse[]>('get_device_distribution');
         
       if (deviceError) throw deviceError;
       
       // 获取地区分布数据 (每人每天只计一次)
       const { data: marketData, error: marketError } = await supabase
-        .rpc('get_market_distribution_unique_daily');
+        .rpc<DistributionResponse[]>('get_market_distribution_unique_daily');
         
       if (marketError) throw marketError;
       
       // 转换数据格式
-      const deviceDistribution: DeviceDistribution[] = deviceData.map((item: any) => ({
+      const deviceDistribution: DeviceDistribution[] = deviceData?.map((item) => ({
         name: item.platform || '未知平台',
         value: Number(item.count)
-      })).sort((a: DeviceDistribution, b: DeviceDistribution) => b.value - a.value);
+      })).sort((a, b) => b.value - a.value) || [];
       
-      const marketDistribution: MarketDistribution[] = marketData.map((item: any) => ({
+      const marketDistribution: MarketDistribution[] = marketData?.map((item) => ({
         name: item.market || '未知地区',
         value: Number(item.count)
-      })).sort((a: MarketDistribution, b: MarketDistribution) => b.value - a.value);
+      })).sort((a, b) => b.value - a.value) || [];
       
       // 更新状态
-      setVisitRecords(recordsData as VisitRecord[]);
+      setVisitRecords(recordsData || []);
       setMetrics({
-        totalVisits: visitorsCountData.total_visits || 0,
-        uniqueVisitors: visitorsCountData.unique_visitors || 0,
-        averageDuration: visitorsCountData.avg_duration,
+        totalVisits: visitorsCountData?.[0]?.total_visits || 0,
+        uniqueVisitors: visitorsCountData?.[0]?.unique_visitors || 0,
+        averageDuration: visitorsCountData?.[0]?.avg_duration || null,
         deviceDistribution,
         marketDistribution
       });
