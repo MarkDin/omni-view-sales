@@ -1,135 +1,120 @@
 import React, { useState } from 'react';
-import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
-import ProductDrilldownModal from '@/components/Dashboard/ProductDrilldownModal';
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from '@tanstack/react-query';
-import { ProductData } from '@/types/product';
-import { calculateSummary, calculateCategoryDistribution } from '@/components/Products/ProductUtils';
-import ProductsSummaryCards from '@/components/Products/ProductsSummaryCards';
 import ProductsCharts from '@/components/Products/ProductsCharts';
-import ProductSearchFilters from '@/components/Products/ProductSearchFilters';
+import ProductsSummaryCards from '@/components/Products/ProductsSummaryCards';
 import ProductsTable from '@/components/Products/ProductsTable';
+import ProductSearchFilters from '@/components/Products/ProductSearchFilters';
+import OrdersSidebar from '@/components/Dashboard/OrdersSidebar';
+import Header from '@/components/Dashboard/Header';
 
-const Products = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [isFiltering, setIsFiltering] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductData | null>(null);
-  const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
+export interface ProductData {
+  id: string; // Changed from number to string to match Supabase UUID
+  name: string;
+  category: string;
+  price: number;
+  inventory: number;
+  sales: number;
+  growth: number;
+  profit: number;
+  margin: number;
+  customers: number;
+}
 
-  const { data: products = [], isLoading, error } = useQuery({
-    queryKey: ['products'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*');
-      
-      if (error) {
-        console.error('Error fetching products:', error);
-        throw error;
-      }
-      
-      return data as ProductData[];
-    }
-  });
+const mockProducts: ProductData[] = [
+  {
+    id: "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    name: "智能手机",
+    category: "电子产品",
+    price: 899,
+    inventory: 150,
+    sales: 320,
+    growth: 0.15,
+    profit: 55000,
+    margin: 0.20,
+    customers: 280,
+  },
+  {
+    id: "f9e8d7c6-b5a4-3210-fedc-ba9876543210",
+    name: "运动鞋",
+    category: "服装",
+    price: 79,
+    inventory: 600,
+    sales: 950,
+    growth: 0.22,
+    profit: 68000,
+    margin: 0.35,
+    customers: 820,
+  },
+  {
+    id: "01234567-89ab-cdef-0123-456789abcdef",
+    name: "咖啡机",
+    category: "家用电器",
+    price: 129,
+    inventory: 200,
+    sales: 480,
+    growth: 0.08,
+    profit: 35000,
+    margin: 0.27,
+    customers: 410,
+  },
+  {
+    id: "bcdeff23-4567-890a-bcde-f1234567890a",
+    name: "背包",
+    category: "配件",
+    price: 49,
+    inventory: 800,
+    sales: 1200,
+    growth: 0.18,
+    profit: 42000,
+    margin: 0.30,
+    customers: 1050,
+  },
+  {
+    id: "9abcdef0-1234-5678-9abc-def012345678",
+    name: "平板电脑",
+    category: "电子产品",
+    price: 349,
+    inventory: 250,
+    sales: 550,
+    growth: 0.12,
+    profit: 60000,
+    margin: 0.25,
+    customers: 480,
+  },
+];
 
-  const summary = calculateSummary(products);
-  const categoryData = calculateCategoryDistribution(products);
+const Products: React.FC = () => {
+  const [products, setProducts] = useState(mockProducts);
 
-  const filteredProducts = products.filter(product => {
-    if (!product.name || !product.category) return false;
-    
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        product.category.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = categoryFilter ? product.category === categoryFilter : true;
-    
-    return matchesSearch && matchesCategory;
-  });
+  const handleSearch = (searchTerm: string) => {
+    const filteredProducts = mockProducts.filter(product =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setProducts(filteredProducts);
+  };
 
-  const handleProductClick = (product: ProductData) => {
-    if (product && product.name && product.category) {
-      setSelectedProduct(product);
-      setIsDrilldownOpen(true);
+  const handleCategoryFilter = (category: string) => {
+    if (category === '全部') {
+      setProducts(mockProducts);
     } else {
-      console.warn('Attempted to open drilldown with an invalid product:', product);
+      const filteredProducts = mockProducts.filter(product => product.category === category);
+      setProducts(filteredProducts);
     }
   };
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setCategoryFilter(null);
-    setIsFiltering(false);
-  };
-
-  const uniqueCategories = Array.from(
-    new Set(
-      products
-        .filter(product => product && product.category)
-        .map(product => product.category)
-    )
-  );
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen bg-gray-100">
-        <OrdersSidebar />
-        <div className="flex-1 p-6">
-          <h1 className="text-2xl font-bold mb-6">产品管理</h1>
-          <div className="text-center py-10">加载中...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen bg-gray-100">
-        <OrdersSidebar />
-        <div className="flex-1 p-6">
-          <h1 className="text-2xl font-bold mb-6">产品管理</h1>
-          <div className="text-center py-10 text-red-500">加载失败，请稍后重试</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <OrdersSidebar />
-      <div className="flex-1 overflow-auto p-6">
-        <h1 className="text-2xl font-bold mb-6">产品管理</h1>
-        
-        <ProductsSummaryCards summary={summary} />
-        
-        <ProductsCharts products={products} categoryData={categoryData} />
-        
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-            <h3 className="text-lg font-medium mb-4 md:mb-0">产品列表</h3>
-            
-            <ProductSearchFilters
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              categoryFilter={categoryFilter}
-              setCategoryFilter={setCategoryFilter}
-              isFiltering={isFiltering}
-              setIsFiltering={setIsFiltering}
-              uniqueCategories={uniqueCategories}
-              clearFilters={clearFilters}
-            />
-          </div>
-          
-          <ProductsTable products={filteredProducts} handleProductClick={handleProductClick} />
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex">
+        <OrdersSidebar />
+        <div className="flex-1 flex flex-col">
+          <Header />
+          <main className="flex-1 p-4">
+            <ProductsSummaryCards products={products} />
+            <ProductSearchFilters onSearch={handleSearch} onCategoryFilter={handleCategoryFilter} />
+            <ProductsCharts products={products} />
+            <ProductsTable products={products} />
+          </main>
         </div>
-        
-        {selectedProduct && (
-          <ProductDrilldownModal 
-            open={isDrilldownOpen} 
-            onClose={() => setIsDrilldownOpen(false)}
-            product={selectedProduct}
-          />
-        )}
       </div>
     </div>
   );

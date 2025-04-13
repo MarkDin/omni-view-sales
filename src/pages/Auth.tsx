@@ -47,9 +47,18 @@ const Auth = () => {
     e.preventDefault();
     try {
       setLoading(true);
+      
+      // 提取邮箱的用户名部分（@前面的部分）
+      const username = email.split('@')[0];
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            username: username, // 将邮箱用户名部分作为用户名
+          }
+        }
       });
 
       if (error) throw error;
