@@ -11,7 +11,8 @@ import {
   Menu, 
   X, 
   FileSpreadsheet,
-  LogOut
+  LogOut,
+  Activity
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -60,6 +61,7 @@ const OrdersSidebar = () => {
     { path: "/products", label: "产品", icon: <Package2 size={18} /> },
     { path: "/orders", label: "订单", icon: <ShoppingBag size={18} /> },
     { path: "/excel-upload", label: "Excel上传", icon: <FileSpreadsheet size={18} /> },
+    { path: "/visit-info", label: "访问记录", icon: <Activity size={18} /> },
   ];
   
   const renderNavLinks = (onClick?: () => void) => (
