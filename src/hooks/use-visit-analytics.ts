@@ -82,19 +82,19 @@ export const useVisitAnalytics = () => {
       
       // 获取独立访客数和总访问量 - 添加正确的泛型类型
       const { data: visitorsCountData, error: visitorsCountError } = await supabase
-        .rpc<VisitMetricsResponse>('get_visit_metrics');
+        .rpc<VisitMetricsResponse>('get_visit_metrics', {}, { count: 'exact' });
         
       if (visitorsCountError) throw visitorsCountError;
       
       // 获取设备分布数据 - 添加正确的泛型类型
       const { data: deviceData, error: deviceError } = await supabase
-        .rpc<DeviceDistributionResponse>('get_device_distribution');
+        .rpc<DeviceDistributionResponse>('get_device_distribution', {}, { count: 'exact' });
         
       if (deviceError) throw deviceError;
       
       // 获取地区分布数据 (每人每天只计一次) - 添加正确的泛型类型
       const { data: marketData, error: marketError } = await supabase
-        .rpc<MarketDistributionResponse>('get_market_distribution_unique_daily');
+        .rpc<MarketDistributionResponse>('get_market_distribution_unique_daily', {}, { count: 'exact' });
         
       if (marketError) throw marketError;
       
@@ -124,10 +124,12 @@ export const useVisitAnalytics = () => {
       setVisitRecords(typedRecords);
       
       // 安全地访问返回的数据
+      const visitMetrics = visitorsCountData && visitorsCountData.length > 0 ? visitorsCountData[0] : null;
+      
       setMetrics({
-        totalVisits: visitorsCountData && visitorsCountData[0] ? visitorsCountData[0].total_visits : 0,
-        uniqueVisitors: visitorsCountData && visitorsCountData[0] ? visitorsCountData[0].unique_visitors : 0,
-        averageDuration: visitorsCountData && visitorsCountData[0] ? visitorsCountData[0].avg_duration : null,
+        totalVisits: visitMetrics ? visitMetrics.total_visits : 0,
+        uniqueVisitors: visitMetrics ? visitMetrics.unique_visitors : 0,
+        averageDuration: visitMetrics ? visitMetrics.avg_duration : null,
         deviceDistribution,
         marketDistribution
       });
