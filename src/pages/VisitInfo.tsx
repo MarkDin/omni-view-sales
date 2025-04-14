@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { useVisitAnalytics } from '@/hooks/use-visit-analytics';
 import Header from '@/components/Dashboard/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { MarketDistributionChart } from '@/components/Analytics/MarketDistributi
 import { MetricCard } from '@/components/Analytics/MetricCard';
 import { Users, Clock, MousePointer, LayoutGrid } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import {
   Pagination,
   PaginationContent,
@@ -172,10 +174,15 @@ const VisitInfo = () => {
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
-                        <PaginationPrevious
+                        <Button
+                          variant="outline" 
+                          size="sm"
                           onClick={() => fetchVisitRecords(pagination.currentPage - 1)}
                           disabled={pagination.currentPage === 1}
-                        />
+                          className="gap-1"
+                        >
+                          上一页
+                        </Button>
                       </PaginationItem>
                       
                       {Array.from({ length: pagination.totalPages }, (_, i) => (
@@ -190,10 +197,15 @@ const VisitInfo = () => {
                       ))}
                       
                       <PaginationItem>
-                        <PaginationNext
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => fetchVisitRecords(pagination.currentPage + 1)}
                           disabled={pagination.currentPage === pagination.totalPages}
-                        />
+                          className="gap-1"
+                        >
+                          下一页
+                        </Button>
                       </PaginationItem>
                     </PaginationContent>
                   </Pagination>

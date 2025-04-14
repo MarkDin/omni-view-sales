@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -86,7 +87,7 @@ export const useVisitAnalytics = () => {
       
       // Fetch paginated records using edge function
       const { data: paginatedData, error: paginationError } = await supabase.functions.invoke('paginated-visit-records', {
-        query: { page: page.toString(), pageSize: pagination.pageSize.toString() }
+        body: { page, pageSize: pagination.pageSize }
       });
 
       if (paginationError) throw paginationError;
@@ -102,21 +103,21 @@ export const useVisitAnalytics = () => {
         });
       }
 
-      // 获取独立访客数和总访问量 - 添加正确的泛型类型
+      // 获取独立访客数和总访问量
       const { data: visitorsCountData, error: visitorsCountError } = await supabase
-        .rpc<VisitMetricsResponse>('get_visit_metrics', {}, { count: 'exact' });
+        .rpc('get_visit_metrics');
         
       if (visitorsCountError) throw visitorsCountError;
       
-      // 获取设备分布数据 - 添加正确的泛型类型
+      // 获取设备分布数据
       const { data: deviceData, error: deviceError } = await supabase
-        .rpc<DeviceDistributionResponse>('get_device_distribution', {}, { count: 'exact' });
+        .rpc('get_device_distribution');
         
       if (deviceError) throw deviceError;
       
-      // 获取地区分布数据 (每人每天只计一次) - 添加正确的泛型类型
+      // 获取地区分布数据 (每人每天只计一次)
       const { data: marketData, error: marketError } = await supabase
-        .rpc<MarketDistributionResponse>('get_market_distribution_unique_daily', {}, { count: 'exact' });
+        .rpc('get_market_distribution_unique_daily');
         
       if (marketError) throw marketError;
       

@@ -14,10 +14,21 @@ serve(async (req) => {
   }
 
   try {
-    // Get pagination parameters from query string
-    const url = new URL(req.url)
-    const pageSize = parseInt(url.searchParams.get('pageSize') || '10')
-    const page = parseInt(url.searchParams.get('page') || '1')
+    // Get pagination parameters from request body
+    let pageSize = 10;
+    let page = 1;
+    
+    // Parse the request body for POST requests
+    if (req.method === 'POST') {
+      const body = await req.json();
+      pageSize = body.pageSize || 10;
+      page = body.page || 1;
+    } else {
+      // Get pagination parameters from query string for GET requests
+      const url = new URL(req.url);
+      pageSize = parseInt(url.searchParams.get('pageSize') || '10');
+      page = parseInt(url.searchParams.get('page') || '1');
+    }
     
     // Create Supabase client
     const supabaseClient = createClient(
