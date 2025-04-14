@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -56,6 +55,13 @@ interface MarketDistributionResponse {
   count: number;
 }
 
+interface PaginationState {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalCount: number;
+}
+
 export const useVisitAnalytics = () => {
   const [visitRecords, setVisitRecords] = useState<VisitRecord[]>([]);
   const [metrics, setMetrics] = useState<VisitMetrics>({
@@ -66,20 +72,36 @@ export const useVisitAnalytics = () => {
     marketDistribution: []
   });
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState<PaginationState>({
+    currentPage: 1,
+    totalPages: 1,
+    pageSize: 10,
+    totalCount: 0
+  });
   const { toast } = useToast();
 
-  const fetchVisitRecords = async () => {
+  const fetchVisitRecords = async (page: number = 1) => {
     try {
       setLoading(true);
       
-      // 获取基础访问记录
-      const { data: recordsData, error: recordsError } = await supabase
-        .from('visit_records')
-        .select('*')
-        .order('visit_start_time', { ascending: false });
+      // Fetch paginated records using edge function
+      const { data: paginatedData, error: paginationError } = await supabase.functions.invoke('paginated-visit-records', {
+        query: { page: page.toString(), pageSize: pagination.pageSize.toString() }
+      });
 
-      if (recordsError) throw recordsError;
-      
+      if (paginationError) throw paginationError;
+
+      // Update pagination state and records
+      if (paginatedData) {
+        setVisitRecords(paginatedData.records);
+        setPagination({
+          currentPage: paginatedData.currentPage,
+          totalPages: paginatedData.totalPages,
+          pageSize: paginatedData.pageSize,
+          totalCount: paginatedData.totalCount
+        });
+      }
+
       // 获取独立访客数和总访问量 - 添加正确的泛型类型
       const { data: visitorsCountData, error: visitorsCountError } = await supabase
         .rpc<VisitMetricsResponse>('get_visit_metrics', {}, { count: 'exact' });
@@ -114,8 +136,8 @@ export const useVisitAnalytics = () => {
         : [];
       
       // 确保 device_info 字段符合 VisitRecord 接口要求
-      const typedRecords = Array.isArray(recordsData) 
-        ? recordsData.map((record: any) => ({
+      const typedRecords = Array.isArray(paginatedData?.records) 
+        ? paginatedData?.records.map((record: any) => ({
             ...record,
             device_info: record.device_info || {}
           })) as VisitRecord[]
@@ -144,14 +166,16 @@ export const useVisitAnalytics = () => {
     }
   };
 
+  // Initial fetch
   useEffect(() => {
-    fetchVisitRecords();
+    fetchVisitRecords(1);
   }, []);
 
   return {
     visitRecords,
     loading,
     metrics,
+    pagination,
     fetchVisitRecords
   };
 };

@@ -1,5 +1,4 @@
-
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useVisitAnalytics } from '@/hooks/use-visit-analytics';
 import Header from '@/components/Dashboard/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,9 +8,17 @@ import { MarketDistributionChart } from '@/components/Analytics/MarketDistributi
 import { MetricCard } from '@/components/Analytics/MetricCard';
 import { Users, Clock, MousePointer, LayoutGrid } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const VisitInfo = () => {
-  const { visitRecords, loading, metrics, fetchVisitRecords } = useVisitAnalytics();
+  const { visitRecords, loading, metrics, pagination, fetchVisitRecords } = useVisitAnalytics();
 
   useEffect(() => {
     fetchVisitRecords();
@@ -66,7 +73,6 @@ const VisitInfo = () => {
       <Header title="访问数据分析" description="查看网站访问数据和用户行为" />
 
       <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-        {/* 指标卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard 
             title="总访问量" 
@@ -90,7 +96,6 @@ const VisitInfo = () => {
           />
         </div>
 
-        {/* 图表区域 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {loading ? (
             <>
@@ -119,7 +124,6 @@ const VisitInfo = () => {
           )}
         </div>
 
-        {/* 访问记录表格 */}
         <Card className="w-full">
           <CardHeader>
             <CardTitle>详细访问记录</CardTitle>
@@ -132,36 +136,69 @@ const VisitInfo = () => {
                 ))}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>访问时间</TableHead>
-                      <TableHead>访问页面</TableHead>
-                      <TableHead>用户邮箱</TableHead>
-                      <TableHead>设备信息</TableHead>
-                      <TableHead>访问地区</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {visitRecords.length > 0 ? (
-                      visitRecords.map((record) => (
-                        <TableRow key={record.id}>
-                          <TableCell>{formatDate(record.visit_start_time)}</TableCell>
-                          <TableCell>{getPageName(record.path)}</TableCell>
-                          <TableCell>{record.user_email || '未登录用户'}</TableCell>
-                          <TableCell>{formatDeviceInfo(record.device_info)}</TableCell>
-                          <TableCell>{record.market || '未知'}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center">暂无访问记录</TableCell>
+                        <TableHead>访问时间</TableHead>
+                        <TableHead>访问页面</TableHead>
+                        <TableHead>用户邮箱</TableHead>
+                        <TableHead>设备信息</TableHead>
+                        <TableHead>访问地区</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {visitRecords.length > 0 ? (
+                        visitRecords.map((record) => (
+                          <TableRow key={record.id}>
+                            <TableCell>{formatDate(record.visit_start_time)}</TableCell>
+                            <TableCell>{getPageName(record.path)}</TableCell>
+                            <TableCell>{record.user_email || '未登录用户'}</TableCell>
+                            <TableCell>{formatDeviceInfo(record.device_info)}</TableCell>
+                            <TableCell>{record.market || '未知'}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center">暂无访问记录</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                
+                <div className="mt-4">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => fetchVisitRecords(pagination.currentPage - 1)}
+                          disabled={pagination.currentPage === 1}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: pagination.totalPages }, (_, i) => (
+                        <PaginationItem key={i + 1}>
+                          <PaginationLink
+                            onClick={() => fetchVisitRecords(i + 1)}
+                            isActive={pagination.currentPage === i + 1}
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                      
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => fetchVisitRecords(pagination.currentPage + 1)}
+                          disabled={pagination.currentPage === pagination.totalPages}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
