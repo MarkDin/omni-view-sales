@@ -10,12 +10,12 @@ interface VisitRecord {
   visit_start_time: string;
   visit_end_time: string | null;
   device_info: {
-    userAgent: string;
-    platform: string;
-    language: string;
-    screenWidth: number;
-    screenHeight: number;
-  } | Json;  // 添加 Json 类型以兼容后端返回
+    userAgent?: string;
+    platform?: string;
+    language?: string;
+    screenWidth?: number;
+    screenHeight?: number;
+  } | Json;
   market: string | null;
   path: string;
   created_at: string | null;
@@ -80,43 +80,48 @@ export const useVisitAnalytics = () => {
 
       if (recordsError) throw recordsError;
       
-      // 获取独立访客数和总访问量 - 修复泛型参数
+      // 获取独立访客数和总访问量 - 添加正确的泛型类型
       const { data: visitorsCountData, error: visitorsCountError } = await supabase
-        .rpc('get_visit_metrics');
+        .rpc<VisitMetricsResponse>('get_visit_metrics');
         
       if (visitorsCountError) throw visitorsCountError;
       
-      // 获取设备分布数据 - 修复泛型参数
+      // 获取设备分布数据 - 添加正确的泛型类型
       const { data: deviceData, error: deviceError } = await supabase
-        .rpc('get_device_distribution');
+        .rpc<DeviceDistributionResponse>('get_device_distribution');
         
       if (deviceError) throw deviceError;
       
-      // 获取地区分布数据 (每人每天只计一次) - 修复泛型参数
+      // 获取地区分布数据 (每人每天只计一次) - 添加正确的泛型类型
       const { data: marketData, error: marketError } = await supabase
-        .rpc('get_market_distribution_unique_daily');
+        .rpc<MarketDistributionResponse>('get_market_distribution_unique_daily');
         
       if (marketError) throw marketError;
       
       // 转换数据格式 - 增加安全检查
-      const deviceDistribution: DeviceDistribution[] = deviceData ? deviceData.map((item) => ({
-        name: item.platform || '未知平台',
-        value: Number(item.count)
-      })).sort((a, b) => b.value - a.value) : [];
+      const deviceDistribution: DeviceDistribution[] = Array.isArray(deviceData) 
+        ? deviceData.map((item) => ({
+            name: item.platform || '未知平台',
+            value: Number(item.count)
+          })).sort((a, b) => b.value - a.value) 
+        : [];
       
-      const marketDistribution: MarketDistribution[] = marketData ? marketData.map((item) => ({
-        name: item.market || '未知地区',
-        value: Number(item.count)
-      })).sort((a, b) => b.value - a.value) : [];
+      const marketDistribution: MarketDistribution[] = Array.isArray(marketData) 
+        ? marketData.map((item) => ({
+            name: item.market || '未知地区',
+            value: Number(item.count)
+          })).sort((a, b) => b.value - a.value) 
+        : [];
       
-      // 更新状态 - 类型转换以匹配预期类型
-      const typedRecords = recordsData ? recordsData.map((record: any) => ({
-        ...record,
-        // 确保 device_info 字段符合 VisitRecord 接口要求
-        device_info: record.device_info
-      })) : [];
+      // 确保 device_info 字段符合 VisitRecord 接口要求
+      const typedRecords = Array.isArray(recordsData) 
+        ? recordsData.map((record: any) => ({
+            ...record,
+            device_info: record.device_info || {}
+          })) as VisitRecord[]
+        : [];
       
-      setVisitRecords(typedRecords as VisitRecord[]);
+      setVisitRecords(typedRecords);
       
       // 安全地访问返回的数据
       setMetrics({

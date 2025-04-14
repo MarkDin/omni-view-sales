@@ -72,45 +72,57 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
-          city: string | null
-          company: string | null
+          company: string
           created_at: string | null
+          customer_code: string
           email: string | null
           id: string
           industry: string | null
-          last_purchase: string | null
+          last_order: string | null
           lifetime_value: number | null
           name: string
           phone: string | null
           purchase_count: number | null
+          region: string | null
+          score: number | null
+          short_name: string | null
+          status: number | null
         }
         Insert: {
           address?: string | null
-          city?: string | null
-          company?: string | null
+          company?: string
           created_at?: string | null
+          customer_code?: string
           email?: string | null
           id?: string
           industry?: string | null
-          last_purchase?: string | null
-          lifetime_value?: number | null
-          name: string
-          phone?: string | null
-          purchase_count?: number | null
-        }
-        Update: {
-          address?: string | null
-          city?: string | null
-          company?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          industry?: string | null
-          last_purchase?: string | null
+          last_order?: string | null
           lifetime_value?: number | null
           name?: string
           phone?: string | null
           purchase_count?: number | null
+          region?: string | null
+          score?: number | null
+          short_name?: string | null
+          status?: number | null
+        }
+        Update: {
+          address?: string | null
+          company?: string
+          created_at?: string | null
+          customer_code?: string
+          email?: string | null
+          id?: string
+          industry?: string | null
+          last_order?: string | null
+          lifetime_value?: number | null
+          name?: string
+          phone?: string | null
+          purchase_count?: number | null
+          region?: string | null
+          score?: number | null
+          short_name?: string | null
+          status?: number | null
         }
         Relationships: []
       }
@@ -197,6 +209,39 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_statistics: {
+        Row: {
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          period_type: string
+          total_amount: number
+          total_orders: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          period_type: string
+          total_amount?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          total_amount?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       visit_records: {
         Row: {
           created_at: string | null
@@ -249,6 +294,14 @@ export type Database = {
           count: number
         }[]
       }
+      get_period_dates: {
+        Args: { order_date: string }
+        Returns: {
+          period_type: string
+          period_start: string
+          period_end: string
+        }[]
+      }
       get_visit_metrics: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -256,6 +309,10 @@ export type Database = {
           unique_visitors: number
           avg_duration: number
         }[]
+      }
+      sync_customers_from_orders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
