@@ -1,3 +1,4 @@
+
 export interface CustomerData {
     id: string;
     name: string;
@@ -14,8 +15,9 @@ export interface CustomerData {
     growth?: number;
     status?: 'active' | 'at-risk';
     products?: string[];
-    last_purchase: string | null;
+    last_purchase?: string | null;
+    last_order?: string | null;
     region?: string;
-    city: string | null;
+    city?: string | null;
     address: string | null;
 }

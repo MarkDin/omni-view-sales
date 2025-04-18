@@ -8,14 +8,23 @@ import CustomerOverview from '@/components/Dashboard/CustomerOverview';
 import RegionalSales from '@/components/Dashboard/RegionalSales';
 import PipelineAnalysis from '@/components/Dashboard/PipelineAnalysis';
 import DrilldownModal from '@/components/Dashboard/DrilldownModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAnalytics } from '@/hooks/use-analytics';
 
 const Index = () => {
   const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const { user } = useAuth();
+  const { trackEvent } = useAnalytics();
 
   const handleDrillDown = (customerId: string) => {
     setSelectedCustomerId(customerId);
     setIsDrilldownOpen(true);
+    
+    // 跟踪下钻事件
+    trackEvent('drill_down', {
+      section: customerId
+    });
   };
 
   return (
@@ -35,7 +44,7 @@ const Index = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <CustomerOverview onDrillDown={(customerId) => handleDrillDown('customer', customerId)} />
+              <CustomerOverview onDrillDown={(customerId) => handleDrillDown('customer')} />
             </div>
             <RegionalSales onDrillDown={() => handleDrillDown('regional')} />
           </div>

@@ -27,6 +27,24 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_extra: {
+        Row: {
+          created_at: string
+          id: number
+          trend_chart: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          trend_chart?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          trend_chart?: string | null
+        }
+        Relationships: []
+      }
       customer_orders: {
         Row: {
           country: string | null
@@ -80,6 +98,7 @@ export type Database = {
           id: string
           industry: string | null
           last_order: string | null
+          last_order: string | null
           lifetime_value: number | null
           name: string
           phone: string
@@ -98,6 +117,7 @@ export type Database = {
           id?: string
           industry?: string | null
           last_order?: string | null
+          last_order?: string | null
           lifetime_value?: number | null
           name?: string
           phone: string
@@ -115,6 +135,7 @@ export type Database = {
           email?: string | null
           id?: string
           industry?: string | null
+          last_order?: string | null
           last_order?: string | null
           lifetime_value?: number | null
           name?: string
@@ -206,6 +227,72 @@ export type Database = {
           price?: number
           profit?: number | null
           sales?: number | null
+        }
+        Relationships: []
+      }
+      sales_statistics: {
+        Row: {
+          created_at: string
+          id: string
+          period_end: string
+          period_start: string
+          period_type: string
+          total_amount: number
+          total_orders: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          period_end: string
+          period_start: string
+          period_type: string
+          total_amount?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          total_amount?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      visit_records: {
+        Row: {
+          created_at: string | null
+          device_info: Json | null
+          id: string
+          market: string | null
+          path: string
+          user_email: string | null
+          visit_end_time: string | null
+          visit_start_time: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          market?: string | null
+          path: string
+          user_email?: string | null
+          visit_end_time?: string | null
+          visit_start_time?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_info?: Json | null
+          id?: string
+          market?: string | null
+          path?: string
+          user_email?: string | null
+          visit_end_time?: string | null
+          visit_start_time?: string | null
         }
         Relationships: []
       }

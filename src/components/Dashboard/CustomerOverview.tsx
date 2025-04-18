@@ -17,7 +17,7 @@ interface CustomerData {
   status?: 'active' | 'at-risk';
   products?: number;
   purchase_count: number | null;
-  last_purchase: string | null;
+  last_order: string | null;
 }
 
 interface CustomerOverviewProps {
@@ -47,9 +47,9 @@ const CustomerOverview: React.FC<CustomerOverviewProps> = ({ onDrillDown }) => {
         revenue: customer.lifetime_value,
         // Generate random growth between -10 and +20
         growth: Math.round((Math.random() * 30 - 10) * 10) / 10,
-        // Determine status based on last purchase date
-        status: customer.last_purchase && 
-                new Date(customer.last_purchase) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
+        // Determine status based on last order date
+        status: customer.last_order && 
+                new Date(customer.last_order) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
                 ? 'active' : 'at-risk',
         // Number of products (random number between 1-5)
         products: Math.floor(Math.random() * 5) + 1
