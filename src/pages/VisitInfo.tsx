@@ -9,7 +9,6 @@ import { MarketDistributionChart } from '@/components/Analytics/MarketDistributi
 import { MetricCard } from '@/components/Analytics/MetricCard';
 import { Users, Clock, MousePointer, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
 import {
   Pagination,
   PaginationContent,
@@ -74,18 +73,15 @@ const VisitInfo = () => {
   // 生成要显示的页码
   const getVisiblePages = () => {
     const { currentPage, totalPages } = pagination;
-    const maxPageButtons = 5; // 最多显示的页码按钮数
+    const maxPageButtons = 5;
     
     if (totalPages <= maxPageButtons) {
-      // 如果总页数小于等于最大按钮数，显示所有页码
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
     
-    // 计算显示哪些页码
     let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
     let endPage = startPage + maxPageButtons - 1;
     
-    // 调整开始和结束页码
     if (endPage > totalPages) {
       endPage = totalPages;
       startPage = Math.max(1, endPage - maxPageButtons + 1);
@@ -97,68 +93,89 @@ const VisitInfo = () => {
   const visiblePages = getVisiblePages();
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <Header title="访问数据分析" description="查看网站访问数据和用户行为" />
+    <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+      <Header title="访问数据分析" description="查看网站访问数据和用户行为分析" />
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <main className="flex-1 overflow-y-auto p-6 space-y-8">
+        {/* Metric Cards Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <MetricCard 
             title="总访问量" 
             value={metrics.totalVisits}
-            icon={<MousePointer size={20} />} 
+            icon={<MousePointer className="h-5 w-5 text-blue-500" />}
+            className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200"
           />
           <MetricCard 
             title="独立访客" 
             value={metrics.uniqueVisitors}
-            icon={<Users size={20} />} 
+            icon={<Users className="h-5 w-5 text-purple-500" />}
+            className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200"
           />
           <MetricCard 
             title="平均访问时长" 
             value={formatDuration(metrics.averageDuration)}
-            icon={<Clock size={20} />} 
+            icon={<Clock className="h-5 w-5 text-green-500" />}
+            className="bg-gradient-to-br from-green-50 to-green-100 border-green-200"
           />
           <MetricCard 
             title="访问页面数" 
             value={new Set(visitRecords.map(r => r.path)).size}
-            icon={<LayoutGrid size={20} />} 
+            icon={<LayoutGrid className="h-5 w-5 text-orange-500" />}
+            className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200"
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {loading ? (
             <>
-              <Card>
+              <Card className="backdrop-blur-sm bg-white/50">
                 <CardHeader>
                   <CardTitle>设备分布</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <Skeleton className="w-full h-full" />
+                  <Skeleton className="w-full h-full rounded-lg" />
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="backdrop-blur-sm bg-white/50">
                 <CardHeader>
                   <CardTitle>地区分布</CardTitle>
                 </CardHeader>
                 <CardContent className="h-80">
-                  <Skeleton className="w-full h-full" />
+                  <Skeleton className="w-full h-full rounded-lg" />
                 </CardContent>
               </Card>
             </>
           ) : (
             <>
-              <DeviceDistributionChart data={metrics.deviceDistribution} />
-              <MarketDistributionChart data={metrics.marketDistribution} />
+              <Card className="backdrop-blur-sm bg-white/50 hover:shadow-lg transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle>设备分布</CardTitle>
+                </CardHeader>
+                <CardContent className="h-80">
+                  <DeviceDistributionChart data={metrics.deviceDistribution} />
+                </CardContent>
+              </Card>
+              <Card className="backdrop-blur-sm bg-white/50 hover:shadow-lg transition-shadow duration-300">
+                <CardHeader>
+                  <CardTitle>地区分布</CardTitle>
+                </CardHeader>
+                <CardContent className="h-80">
+                  <MarketDistributionChart data={metrics.marketDistribution} />
+                </CardContent>
+              </Card>
             </>
           )}
         </div>
 
-        <Card className="w-full">
-          <CardHeader>
+        {/* Visit Records Table */}
+        <Card className="backdrop-blur-sm bg-white/50">
+          <CardHeader className="border-b">
             <CardTitle>详细访问记录</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {loading ? (
-              <div className="space-y-2">
+              <div className="p-6 space-y-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="h-12 w-full" />
                 ))}
@@ -169,50 +186,46 @@ const VisitInfo = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>访问时间</TableHead>
-                        <TableHead>访问页面</TableHead>
-                        <TableHead>用户邮箱</TableHead>
-                        <TableHead>设备信息</TableHead>
-                        <TableHead>访问地区</TableHead>
+                        <TableHead className="font-medium">访问时间</TableHead>
+                        <TableHead className="font-medium">访问页面</TableHead>
+                        <TableHead className="font-medium">用户邮箱</TableHead>
+                        <TableHead className="font-medium">设备信息</TableHead>
+                        <TableHead className="font-medium">访问地区</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {visitRecords.length > 0 ? (
                         visitRecords.map((record) => (
-                          <TableRow key={record.id}>
-                            <TableCell>{formatDate(record.visit_start_time)}</TableCell>
-                            <TableCell>{getPageName(record.path)}</TableCell>
-                            <TableCell>{record.user_email || '未登录用户'}</TableCell>
-                            <TableCell>{formatDeviceInfo(record.device_info)}</TableCell>
-                            <TableCell>{record.market || '未知'}</TableCell>
+                          <TableRow key={record.id} className="hover:bg-gray-50">
+                            <TableCell className="text-sm">{formatDate(record.visit_start_time)}</TableCell>
+                            <TableCell className="text-sm font-medium">{getPageName(record.path)}</TableCell>
+                            <TableCell className="text-sm">{record.user_email || '未登录用户'}</TableCell>
+                            <TableCell className="text-sm">{formatDeviceInfo(record.device_info)}</TableCell>
+                            <TableCell className="text-sm">{record.market || '未知'}</TableCell>
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center">暂无访问记录</TableCell>
+                          <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                            暂无访问记录
+                          </TableCell>
                         </TableRow>
                       )}
                     </TableBody>
                   </Table>
                 </div>
                 
-                <div className="mt-4">
+                <div className="flex justify-center py-4 border-t">
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
-                        <Button
-                          variant="outline" 
-                          size="sm"
+                        <PaginationPrevious
                           onClick={() => fetchVisitRecords(pagination.currentPage - 1)}
                           disabled={pagination.currentPage === 1}
-                          className="gap-1"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          上一页
-                        </Button>
+                        />
                       </PaginationItem>
                       
-                      {/* 添加首页按钮 */}
+                      {/* Show first page and ellipsis */}
                       {pagination.currentPage > 3 && (
                         <>
                           <PaginationItem>
@@ -228,7 +241,7 @@ const VisitInfo = () => {
                         </>
                       )}
                       
-                      {/* 显示有限数量的页码按钮 */}
+                      {/* Show current page group */}
                       {visiblePages.map(page => (
                         <PaginationItem key={page}>
                           <PaginationLink
@@ -240,7 +253,7 @@ const VisitInfo = () => {
                         </PaginationItem>
                       ))}
                       
-                      {/* 添加末页按钮 */}
+                      {/* Show last page and ellipsis */}
                       {pagination.currentPage < pagination.totalPages - 2 && (
                         <>
                           {pagination.currentPage < pagination.totalPages - 3 && (
@@ -257,16 +270,10 @@ const VisitInfo = () => {
                       )}
                       
                       <PaginationItem>
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <PaginationNext
                           onClick={() => fetchVisitRecords(pagination.currentPage + 1)}
                           disabled={pagination.currentPage === pagination.totalPages}
-                          className="gap-1"
-                        >
-                          下一页
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
+                        />
                       </PaginationItem>
                     </PaginationContent>
                   </Pagination>
