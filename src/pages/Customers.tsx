@@ -1,14 +1,14 @@
+
 import React from 'react';
 import Header from '@/components/Dashboard/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
-import { ColumnDef } from "@tanstack/react-table"
-import { Customer } from "@/types"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { type Customer } from "@/types/customer";
 
 const Customers = () => {
   const { isLoading, error, data } = useQuery({
@@ -16,15 +16,16 @@ const Customers = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select('*');
       if (error) {
-        throw new Error(error.message)
+        throw new Error(error.message);
       }
-      return data as Customer[]
+      return data as Customer[];
     },
-  })
+  });
 
-  const columns: ColumnDef<Customer>[] = [
+  // 定义渲染列的配置，不使用ColumnDef类型
+  const columns = [
     {
       accessorKey: 'name',
       header: '姓名',
@@ -32,7 +33,7 @@ const Customers = () => {
     {
       accessorKey: 'company',
       header: '公司',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: { original: Customer } }) => (
         <div className="flex items-center">
           <Avatar className="mr-2 h-4 w-4">
             <AvatarImage src={`https://ui-avatars.com/api/?name=${row.original.company}&size=32`} />
@@ -65,7 +66,7 @@ const Customers = () => {
     {
       accessorKey: 'last_order',
       header: '上次购买',
-      cell: ({ row }) => {
+      cell: ({ row }: { row: { original: Customer } }) => {
         const value = row.original.last_order;
         return value ? new Date(value).toLocaleDateString() : '暂无购买记录';
       }
@@ -85,27 +86,27 @@ const Customers = () => {
     {
       accessorKey: 'status',
       header: '状态',
-      cell: ({ row }) => {
+      cell: ({ row }: { row: { original: Customer } }) => {
         const status = row.original.status;
         let statusText = '未知';
-        let badgeVariant = 'default';
+        let badgeVariant: "default" | "secondary" | "destructive" | "outline" = "default";
 
         switch (status) {
           case 1:
             statusText = '潜在客户';
-            badgeVariant = 'secondary';
+            badgeVariant = "secondary";
             break;
           case 2:
             statusText = '活跃客户';
-            badgeVariant = 'success';
+            badgeVariant = "default"; // 使用允许的变体类型
             break;
           case 3:
             statusText = '流失客户';
-            badgeVariant = 'destructive';
+            badgeVariant = "destructive";
             break;
           default:
             statusText = '未知';
-            badgeVariant = 'default';
+            badgeVariant = "outline";
             break;
         }
 
@@ -131,7 +132,7 @@ const Customers = () => {
                 ))}
               </div>
             ) : error ? (
-              <p>Error: {error.message}</p>
+              <p>Error: {(error as Error).message}</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>

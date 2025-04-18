@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useVisitAnalytics } from '@/hooks/use-visit-analytics';
 import Header from '@/components/Dashboard/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DeviceDistributionChart } from '@/components/Analytics/DeviceDistributionChart';
 import { MarketDistributionChart } from '@/components/Analytics/MarketDistributionChart';
 import { MetricCard } from '@/components/Analytics/MetricCard';
-import { Users, Clock, MousePointer, LayoutGrid } from 'lucide-react';
+import { Users, Clock, MousePointer, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,12 +17,13 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  PaginationEllipsis,
 } from "@/components/ui/pagination";
 
 const VisitInfo = () => {
   const { visitRecords, loading, metrics, pagination, fetchVisitRecords } = useVisitAnalytics();
 
-  useEffect(() => {
+  React.useEffect(() => {
     fetchVisitRecords();
   }, []);
 
@@ -69,6 +70,31 @@ const VisitInfo = () => {
     }
     return `${remainingSeconds}秒`;
   };
+
+  // 生成要显示的页码
+  const getVisiblePages = () => {
+    const { currentPage, totalPages } = pagination;
+    const maxPageButtons = 5; // 最多显示的页码按钮数
+    
+    if (totalPages <= maxPageButtons) {
+      // 如果总页数小于等于最大按钮数，显示所有页码
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    
+    // 计算显示哪些页码
+    let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+    let endPage = startPage + maxPageButtons - 1;
+    
+    // 调整开始和结束页码
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - maxPageButtons + 1);
+    }
+    
+    return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  };
+
+  const visiblePages = getVisiblePages();
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -181,20 +207,54 @@ const VisitInfo = () => {
                           disabled={pagination.currentPage === 1}
                           className="gap-1"
                         >
+                          <ChevronLeft className="h-4 w-4" />
                           上一页
                         </Button>
                       </PaginationItem>
                       
-                      {Array.from({ length: pagination.totalPages }, (_, i) => (
-                        <PaginationItem key={i + 1}>
+                      {/* 添加首页按钮 */}
+                      {pagination.currentPage > 3 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationLink onClick={() => fetchVisitRecords(1)}>
+                              1
+                            </PaginationLink>
+                          </PaginationItem>
+                          {pagination.currentPage > 4 && (
+                            <PaginationItem>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* 显示有限数量的页码按钮 */}
+                      {visiblePages.map(page => (
+                        <PaginationItem key={page}>
                           <PaginationLink
-                            onClick={() => fetchVisitRecords(i + 1)}
-                            isActive={pagination.currentPage === i + 1}
+                            onClick={() => fetchVisitRecords(page)}
+                            isActive={pagination.currentPage === page}
                           >
-                            {i + 1}
+                            {page}
                           </PaginationLink>
                         </PaginationItem>
                       ))}
+                      
+                      {/* 添加末页按钮 */}
+                      {pagination.currentPage < pagination.totalPages - 2 && (
+                        <>
+                          {pagination.currentPage < pagination.totalPages - 3 && (
+                            <PaginationItem>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          )}
+                          <PaginationItem>
+                            <PaginationLink onClick={() => fetchVisitRecords(pagination.totalPages)}>
+                              {pagination.totalPages}
+                            </PaginationLink>
+                          </PaginationItem>
+                        </>
+                      )}
                       
                       <PaginationItem>
                         <Button
@@ -205,6 +265,7 @@ const VisitInfo = () => {
                           className="gap-1"
                         >
                           下一页
+                          <ChevronRight className="h-4 w-4" />
                         </Button>
                       </PaginationItem>
                     </PaginationContent>

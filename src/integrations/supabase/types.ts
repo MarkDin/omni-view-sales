@@ -9,39 +9,140 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      customer_extra: {
+      client_communications: {
         Row: {
-          created_at: string
+          ai_generated: boolean | null
+          attachments: Json | null
+          client_id: string
+          created_at: string | null
+          customer_code: string
+          edited: boolean | null
+          emails_id: string[] | null
           id: number
-          trend_chart: string | null
+          summary: string | null
+          tags: string[] | null
+          thread_count: number | null
+          week_end: string | null
+          week_label: string | null
+          week_start: string | null
         }
         Insert: {
-          created_at?: string
+          ai_generated?: boolean | null
+          attachments?: Json | null
+          client_id: string
+          created_at?: string | null
+          customer_code: string
+          edited?: boolean | null
+          emails_id?: string[] | null
           id?: number
-          trend_chart?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          thread_count?: number | null
+          week_end?: string | null
+          week_label?: string | null
+          week_start?: string | null
         }
         Update: {
-          created_at?: string
+          ai_generated?: boolean | null
+          attachments?: Json | null
+          client_id?: string
+          created_at?: string | null
+          customer_code?: string
+          edited?: boolean | null
+          emails_id?: string[] | null
           id?: number
-          trend_chart?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          thread_count?: number | null
+          week_end?: string | null
+          week_label?: string | null
+          week_start?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "client_communications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_communications_customer_code"
+            columns: ["customer_code"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["customer_code"]
+          },
+        ]
+      }
+      client_summaries: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          edited: boolean | null
+          id: string
+          key_insights: string[] | null
+          summary: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          edited?: boolean | null
+          id?: string
+          key_insights?: string[] | null
+          summary?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          edited?: boolean | null
+          id?: string
+          key_insights?: string[] | null
+          summary?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_summaries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_extra: {
         Row: {
+          company_name: string | null
           created_at: string
+          customer_code: string
           id: number
-          trend_chart: string | null
+          long_trend_slope: number
+          name: string | null
+          order_amount_in_the_past_year: number
+          short_trend_slope: number
         }
         Insert: {
+          company_name?: string | null
           created_at?: string
+          customer_code: string
           id?: number
-          trend_chart?: string | null
+          long_trend_slope: number
+          name?: string | null
+          order_amount_in_the_past_year: number
+          short_trend_slope: number
         }
         Update: {
+          company_name?: string | null
           created_at?: string
+          customer_code?: string
           id?: number
-          trend_chart?: string | null
+          long_trend_slope?: number
+          name?: string | null
+          order_amount_in_the_past_year?: number
+          short_trend_slope?: number
         }
         Relationships: []
       }
@@ -90,60 +191,78 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
-          city: string | null
+          ai_summary: string | null
           company: string
           created_at: string | null
-          customer_code: string | null
+          credit_level: string | null
+          credit_limit: number | null
+          credit_used: number | null
+          customer_code: string
           email: string | null
           id: string
           industry: string | null
           last_order: string | null
-          last_order: string | null
           lifetime_value: number | null
           name: string
-          phone: string
+          next_meeting: string | null
+          phone: string | null
           purchase_count: number | null
+          region: string | null
+          sales_rep: string | null
           score: number | null
           short_name: string | null
           status: number | null
+          tags: string[] | null
         }
         Insert: {
           address?: string | null
-          city?: string | null
+          ai_summary?: string | null
           company?: string
           created_at?: string | null
-          customer_code?: string | null
+          credit_level?: string | null
+          credit_limit?: number | null
+          credit_used?: number | null
+          customer_code?: string
           email?: string | null
           id?: string
           industry?: string | null
           last_order?: string | null
-          last_order?: string | null
           lifetime_value?: number | null
           name?: string
-          phone: string
+          next_meeting?: string | null
+          phone?: string | null
           purchase_count?: number | null
+          region?: string | null
+          sales_rep?: string | null
           score?: number | null
           short_name?: string | null
           status?: number | null
+          tags?: string[] | null
         }
         Update: {
           address?: string | null
-          city?: string | null
+          ai_summary?: string | null
           company?: string
           created_at?: string | null
-          customer_code?: string | null
+          credit_level?: string | null
+          credit_limit?: number | null
+          credit_used?: number | null
+          customer_code?: string
           email?: string | null
           id?: string
           industry?: string | null
           last_order?: string | null
-          last_order?: string | null
           lifetime_value?: number | null
           name?: string
-          phone?: string
+          next_meeting?: string | null
+          phone?: string | null
           purchase_count?: number | null
+          region?: string | null
+          sales_rep?: string | null
           score?: number | null
           short_name?: string | null
           status?: number | null
+          tags?: string[] | null
         }
         Relationships: []
       }
@@ -152,39 +271,93 @@ export type Database = {
           content: string | null
           created_at: string
           customer_id: string | null
-          id: number
+          direction: string | null
+          id: string
+          is_read: boolean | null
+          parent_id: string | null
+          read_at: string | null
           receiver: string
+          receiver_email: string | null
           send_at: string | null
           sender: string
+          sender_email: string | null
+          status: string | null
+          subject: string | null
           topic: string | null
+          updated_at: string | null
         }
         Insert: {
           content?: string | null
           created_at?: string
           customer_id?: string | null
-          id?: number
+          direction?: string | null
+          id: string
+          is_read?: boolean | null
+          parent_id?: string | null
+          read_at?: string | null
           receiver: string
+          receiver_email?: string | null
           send_at?: string | null
           sender: string
+          sender_email?: string | null
+          status?: string | null
+          subject?: string | null
           topic?: string | null
+          updated_at?: string | null
         }
         Update: {
           content?: string | null
           created_at?: string
           customer_id?: string | null
-          id?: number
+          direction?: string | null
+          id?: string
+          is_read?: boolean | null
+          parent_id?: string | null
+          read_at?: string | null
           receiver?: string
+          receiver_email?: string | null
           send_at?: string | null
           sender?: string
+          sender_email?: string | null
+          status?: string | null
+          subject?: string | null
           topic?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      monthly_client_data: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_code: string
+          customer_name: string | null
+          id: number
+          month: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_code: string
+          customer_name?: string | null
+          id?: number
+          month: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_code?: string
+          customer_name?: string | null
+          id?: number
+          month?: string
         }
         Relationships: [
           {
-            foreignKeyName: "email_customer_id_fkey"
-            columns: ["customer_id"]
+            foreignKeyName: "monthly_client_data_customer_code_fkey"
+            columns: ["customer_code"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["id"]
+            referencedColumns: ["customer_code"]
           },
         ]
       }
@@ -232,100 +405,82 @@ export type Database = {
       }
       sales_statistics: {
         Row: {
+          completion_rate: number | null
           created_at: string
+          customer_count: number | null
           id: string
+          new_customer_count: number | null
           period_end: string
           period_start: string
           period_type: string
+          target_amount: number | null
           total_amount: number
           total_orders: number
           updated_at: string
+          ytd_sales: number | null
         }
         Insert: {
+          completion_rate?: number | null
           created_at?: string
+          customer_count?: number | null
           id?: string
+          new_customer_count?: number | null
           period_end: string
           period_start: string
           period_type: string
+          target_amount?: number | null
           total_amount?: number
           total_orders?: number
           updated_at?: string
+          ytd_sales?: number | null
         }
         Update: {
+          completion_rate?: number | null
           created_at?: string
+          customer_count?: number | null
           id?: string
+          new_customer_count?: number | null
           period_end?: string
           period_start?: string
           period_type?: string
+          target_amount?: number | null
           total_amount?: number
           total_orders?: number
           updated_at?: string
+          ytd_sales?: number | null
         }
         Relationships: []
       }
-      visit_records: {
+      tags: {
         Row: {
+          color: string | null
           created_at: string | null
-          device_info: Json | null
-          id: string
-          market: string | null
-          path: string
-          user_email: string | null
-          visit_end_time: string | null
-          visit_start_time: string | null
+          created_by: string | null
+          id: number
+          object_id: string
+          object_type: string
+          updated_at: string | null
+          value: string
         }
         Insert: {
+          color?: string | null
           created_at?: string | null
-          device_info?: Json | null
-          id?: string
-          market?: string | null
-          path: string
-          user_email?: string | null
-          visit_end_time?: string | null
-          visit_start_time?: string | null
+          created_by?: string | null
+          id?: number
+          object_id: string
+          object_type: string
+          updated_at?: string | null
+          value: string
         }
         Update: {
+          color?: string | null
           created_at?: string | null
-          device_info?: Json | null
-          id?: string
-          market?: string | null
-          path?: string
-          user_email?: string | null
-          visit_end_time?: string | null
-          visit_start_time?: string | null
-        }
-        Relationships: []
-      }
-      sales_statistics: {
-        Row: {
-          created_at: string
-          id: string
-          period_end: string
-          period_start: string
-          period_type: string
-          total_amount: number
-          total_orders: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          period_end: string
-          period_start: string
-          period_type: string
-          total_amount?: number
-          total_orders?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          period_end?: string
-          period_start?: string
-          period_type?: string
-          total_amount?: number
-          total_orders?: number
-          updated_at?: string
+          created_by?: string | null
+          id?: number
+          object_id?: string
+          object_type?: string
+          updated_at?: string | null
+          value?: string
         }
         Relationships: []
       }
@@ -367,6 +522,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_client_communications_by_client_id: {
+        Args: { p_client_id: string }
+        Returns: {
+          id: number
+          week_start: string
+          week_end: string
+          week_label: string
+          summary: string
+          thread_count: number
+          attachments: Json
+          tags: string[]
+          created_at: string
+          customer_code: string
+          ai_generated: boolean
+          edited: boolean
+          emails_id: string[]
+        }[]
+      }
+      get_dashboard_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ytd_sales: number
+          ytd_growth_rate: number
+          weekly_new_orders: number
+          weekly_growth_rate: number
+          goal_completion_rate: number
+          monthly_trend: Json
+        }[]
+      }
       get_device_distribution: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -379,6 +563,17 @@ export type Database = {
         Returns: {
           market: string
           count: number
+        }[]
+      }
+      get_monthly_region_sales: {
+        Args: { p_start_date?: string; p_end_date?: string }
+        Returns: {
+          sales_month: string
+          region: string
+          amount: number
+          customers: string[]
+          total_amount: number
+          percentage: number
         }[]
       }
       get_period_dates: {
@@ -396,6 +591,14 @@ export type Database = {
           unique_visitors: number
           avg_duration: number
         }[]
+      }
+      sync_customers_from_orders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      update_sales_statistics: {
+        Args: { p_year?: number; p_month?: number }
+        Returns: undefined
       }
     }
     Enums: {
